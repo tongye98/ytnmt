@@ -51,7 +51,7 @@ def train(cfg_file: str) -> None:
     # logger.warning(train_data.tokernized_data_ids["src"])
 
     # build an transformer(encoder-decoder) model
-    model = build_model(model_cfg=cfg["model"], trg_vocab=trg_vocab)
+    model = build_model(model_cfg=cfg["model"], src_vocab=src_vocab, trg_vocab=trg_vocab)
     
     # for training management.
     trainer = TrainManager(model=model, cfg=cfg)

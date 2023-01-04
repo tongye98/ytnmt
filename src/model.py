@@ -328,7 +328,7 @@ class Transformer(nn.Module):
         assert trainable_parameters
 
 def build_model(model_cfg: dict=None, src_vocab: Vocabulary=None,
-                trg_vocab: Vocabulary=None, codebert_encode=None) -> Transformer:
+                trg_vocab: Vocabulary=None) -> Transformer:
     """
     Build and initialize the transformer according to the configuration.
     cfg: yaml model part.
@@ -343,7 +343,7 @@ def build_model(model_cfg: dict=None, src_vocab: Vocabulary=None,
 
     src_embed = Embeddings(embedding_dim=encoder_cfg['embeddings']['embedding_dim'],
                            scale=encoder_cfg['embeddings']['scale'],
-                           vocab_size=src_vocab.vocab_size,
+                           vocab_size=len(src_vocab),
                            padding_index=src_pad_index,
                            freeze=encoder_cfg['embeddings']['freeze'])
 

@@ -26,14 +26,14 @@ def eval_accuracies(hypotheses, references):
     rouge_l, ind_rouge = rouge_calculator.compute_score(references, hypotheses)
 
     # Compute METEOR scores
-    meteor_calculator = Meteor()
-    meteor, _ = meteor_calculator.compute_score(references, hypotheses)
+    # meteor_calculator = Meteor()
+    # meteor, _ = meteor_calculator.compute_score(references, hypotheses)
 
-    return bleu*100 , rouge_l * 100, meteor * 100
+    return bleu*100 , rouge_l * 100, 0 * 100
 
 def test_metrics():
-    predictions_path = "datastore/datastore_liu_c/base3/code_inner/output_rencos_beam4_test.test"
-    references_path = "data/liu_c/test.summary"
+    predictions_path = "datas/script_python/test.token.nl"
+    references_path = "datas/script_python/test.token.nl"
     with open(predictions_path,"r") as p, open(references_path, "r") as r:
         predictions = p.read().splitlines()  # list of string/sentence
         references = r.read().splitlines()  # list of string/sentence
@@ -45,15 +45,15 @@ def test_metrics():
         references_dict = {k: [v.strip().lower()] for k,v in enumerate(references)}
         # 0: ['partitions a list of suite from a interval .']
 
-        ind_bleu, rouge_l, meteor = eval_accuracies(hypotheses=predictions_dict, references=references_dict)
-        # print("bleu = {}".format(bleu))
+        bleu, rouge_l, meteor = eval_accuracies(hypotheses=predictions_dict, references=references_dict)
+        print("bleu = {}".format(bleu))
         print("rouge-l = {}".format(rouge_l))
         print("meteor = {}".format(meteor))
 
-        with open("datastore/datastore_liu_c/base3/code_inner/output_rencos_beam4_test_indbleu",'w') as f:
-            for i in range(length):
-                f.write(str(round(ind_bleu[i], 2)))
-                f.write("   ")
-                f.write(predictions[i])
-                f.write("\n")
+        # with open("datastore/datastore_liu_c/base3/code_inner/output_rencos_beam4_test_indbleu",'w') as f:
+        #     for i in range(length):
+        #         f.write(str(round(ind_bleu[i], 2)))
+        #         f.write("   ")
+        #         f.write(predictions[i])
+        #         f.write("\n")
 
