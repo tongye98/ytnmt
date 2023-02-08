@@ -1,5 +1,5 @@
 # ytnmt
-Basic neural network framework (Transformer-based).
+Basic neural network framework (Transformer-based) from scratch.
 
 ***Highlights:*** Lightweight and highly modular organization structure.
 
