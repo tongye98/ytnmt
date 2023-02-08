@@ -14,8 +14,11 @@ Recommend a ***conda*** virtual environment.
 ~~~
 bash scripts/train.sh
 ~~~
-### inference or test
 
+### inference or test
 ~~~
 bash scripts/test.sh
 ~~~
+
+### Acknowledgements
+some code we refer to [joeynmt](https://github.com/joeynmt/joeynmt) codebase.
