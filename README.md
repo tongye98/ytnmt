@@ -1,6 +1,10 @@
 # ytnmt
 Basic neural network framework (Transformer-based).
 
+***Highlights:*** Lightweight and highly modular organization structure.
+
+Suitable for beginners in **NLP** (Natural Language Processing), **Machine Translation**, **Text generation**...
+
 **Note:** The current version only supports trained in a single GPU.
 
 ## Dependency
