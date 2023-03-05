@@ -1,15 +1,16 @@
 import torch 
 import yaml
 import logging 
-from typing import Union, Dict
+from typing import Union, Dict, Generator
 from pathlib import Path 
 import random 
 import os 
 import numpy as np 
-from typing import Generator
+import heapq
+import time 
 from functools import partial 
 from model import build_model
-from data import load_data
+from data import load_data, OurDataset
 from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,13 @@ class TrainManager(object):
         self.optimizer = self.build_optimizer(train_cfg, parameters=self.model.parameters())
         self.scheduler, self.scheduler_step_at = self.build_scheduler(train_cfg, optimizer=self.optimizer)
 
+        # early stop
+        self.early_stop_metric = train_cfg.get("early_stop_metric", None)
+        if self.early_stop_metric in ["ppl", "loss"]:
+            self.minimize_metric = True # lower is better
+        elif self.early_stop_metric in ["acc", "bleu"]:
+            self.minimize_metric = False # higher is better
+
         # model 
         self.model = model
         if self.device.type == "cuda":
@@ -92,6 +100,13 @@ class TrainManager(object):
                 reset_scheduler=train_cfg.get("reset_scheduler", False),
                 reset_optimizer=train_cfg.get("reset_optimizer", False),
                 reset_iter_state=train_cfg.get("reset_iter_state", False))
+        
+        # initialize training process statistics
+        self.stats = self.TrainStatistics(
+            steps=0, is_min_lr=False, is_max_update=False,
+            total_tokens=0, best_ckpt_iter=0, minimize_metric=self.minimize_metric,
+            best_ckpt_score=np.inf if self.minimize_metric else -np.inf,
+        )
 
     def build_gradient_clipper(self, train_cfg:dict):
         """
@@ -160,12 +175,119 @@ class TrainManager(object):
         
         logger.info("Scheduler = %s", scheduler.__class__.__name__)
         return scheduler, scheduler_step_at
+        
+    def train_and_validate(self, train_data:OurDataset, valid_data:OurDataset) -> None:
+        """
+        Train the model and validate it from time to time on the validation set.
+        """
+        self.train_iter = make_data_iter(dataset=train_data, sampler_seed=self.seed, shuffle=self.shuffle, batch_type=self.batch_type,
+                                            batch_size=self.batch_size, num_workers=self.num_workers)
+
+        if self.train_iter_state is not None:
+            self.train_iter.batch_sampler.sampler.generator.set_state(self.train_iter_state.cpu())
+        
+        # train and validate main loop
+        logger.info("Train stats:\n"
+                    "\tdevice: %s\n"
+                    "\tn_gpu: %d\n"
+                    "\tbatch_size: %d",
+                    self.device.type, self.n_gpu, self.batch_size)
+        try:
+            for epoch_no in range(self.epochs):
+                logger.info("Epoch %d", epoch_no + 1)
+                    
+                self.model.train()
+                self.model.zero_grad()
+                
+                # Statistic for each epoch.
+                start_time = time.time()
+                start_tokens = self.stats.total_tokens
+                epoch_loss = 0
+
+                for batch_data in self.train_iter:
+                    batch_data.move2cuda(self.device)
+                    normalized_batch_loss = self.train_step(batch_data)
+                    
+                    # reset gradients
+                    self.optimizer.zero_grad()
+
+                    normalized_batch_loss.backward()
+
+                    # clip gradients (in-place)
+                    if self.clip_grad_fun is not None:
+                        self.clip_grad_fun(parameters=self.model.parameters())
+                    
+                    # make gradient step
+                    self.optimizer.step()
+
+                    # accumulate loss
+                    epoch_loss += normalized_batch_loss.item()
+
+                    # increment token counter
+                    self.stats.total_tokens += batch_data.ntokens
+                    
+                    # increment step counter
+                    self.stats.steps += 1
+                    if self.stats.steps >= self.max_updates:
+                        self.stats.is_max_update == True
+                    
+                    # check current leraning rate(lr)
+                    current_lr = self.optimizer.param_groups[0]["lr"]
+                    if current_lr < self.learning_rate_min:
+                        self.stats.is_min_lr = True 
+
+                    # log learning process and write tensorboard
+                    if self.stats.steps % self.logging_freq == 0:
+                        elapse_time = time.time() - start_time
+                        elapse_token_num = self.stats.total_tokens - start_tokens
+
+                        self.tb_writer.add_scalar(tag="Train/batch_loss", scalar_value=normalized_batch_loss, global_step=self.stats.steps)
+                        self.tb_writer.add_scalar(tag="Train/learning_rate", scalar_value=current_lr, global_step=self.stats.steps)
+
+                        logger.info("Epoch %3d, Step: %7d, Batch Loss: %12.6f, Lr: %.6f, Tokens per sec: %6.0f",
+                        epoch_no + 1, self.stats.steps, normalized_batch_loss, self.optimizer.param_groups[0]["lr"],
+                        elapse_token_num / elapse_time)
+
+                        start_time = time.time()
+                        start_tokens = self.stats.total_tokens
+                    
+                    # decay learning_rate(lr)
+                    if self.scheduler_step_at == "step":
+                        self.scheduler.step(self.stats.steps)
+
+                logger.info("Epoch %3d: total training loss %.2f", epoch_no + 1, epoch_loss)
+
+                if self.scheduler_step_at == "epoch":
+                    self.scheduler.step()
+
+                # validate on the entire dev dataset
+                if (epoch_no + 1) % self.validation_freq == 0:
+                    valid_duration_time = self.validate(valid_data)
+                    logger.info("Validation time = {}s.".format(valid_duration_time))
+
+                # check after a number of whole epoch.
+                if self.stats.is_min_lr or self.stats.is_max_update:
+                    log_string = (f"minimum learning rate {self.learning_rate_min}" if self.stats.is_min_lr else 
+                                    f"maximun number of updates(steps) {self.max_updates}")
+                    logger.info("Training end since %s was reached!", log_string)
+                    break 
+            else: # normal ended after training.
+                logger.info("Training ended after %3d epoches!", epoch_no + 1)
+
+            logger.info("Best Validation result (greedy) at step %8d: %6.2f %s.",
+                        self.stats.best_ckpt_iter, self.stats.best_ckpt_score, self.early_stopping_metric)
+                    
+        except KeyboardInterrupt:
+            self.save_model_checkpoint(False, float("nan"))
+
+        self.tb_writer.close()
+        return None 
     
     class TrainStatistics:
         def __init__(self, steps:int=0, is_min_lr:bool=False,
-                     is_max_update:bool=False, total_tokens:int=0,
-                     best_ckpt_iter:int=0, best_ckpt_score: float=np.inf,
-                     minimize_metric: bool=True) -> None:
+                        is_max_update:bool=False, total_tokens:int=0,
+                        best_ckpt_iter:int=0, best_ckpt_score: float=np.inf,
+                        minimize_metric: bool=True) -> None:
             self.steps = steps 
             self.is_min_lr = is_min_lr
             self.is_max_update = is_max_update
@@ -188,8 +310,6 @@ class TrainManager(object):
             else:
                 is_better = score > heapq.nsmallest(1, heap_queue)[0][0]
             return is_better
-
-
 
 def train(cfg_file: str) -> None:
     """
