@@ -7,6 +7,7 @@ import random
 import os 
 import numpy as np 
 import heapq
+import math 
 import time 
 from functools import partial 
 from model import build_model
@@ -106,14 +107,18 @@ class TrainManager(object):
             self.minimize_metric = True # lower is better
         elif self.early_stop_metric in ["acc", "bleu"]:
             self.minimize_metric = False # higher is better
+
+        # save / delete checkpoints
+        self.num_ckpts_keep = train_cfg.get("num_ckpts_keep", 3)
+        self.ckpt_queue = [] # heapq queue List[Tuple[float, Path]]
         
         # initialize training process statistics
         self.train_stats = self.TrainStatistics(
             steps=0, is_min_lr=False, is_max_update=False,
-            total_tokens=0, best_ckpt_iter=0, minimize_metric=self.minimize_metric,
+            total_tokens=0, best_ckpt_step=0, minimize_metric=self.minimize_metric,
             best_ckpt_score=np.inf if self.minimize_metric else -np.inf,
         )
-        self.train_loader, self.train_loader_state = None, None
+        self.train_loader = None
 
     def build_gradient_clipper(self, train_cfg:dict):
         """
@@ -189,9 +194,6 @@ class TrainManager(object):
         """
         self.train_loader = make_data_loader(dataset=train_dataset, sampler_seed=self.seed, shuffle=self.shuffle,
                                     batch_size=self.batch_size, num_workers=self.num_workers, mode="train")
-
-        if self.train_loader_state is not None:
-            self.train_loader.batch_sampler.sampler.generator.set_state(self.train_loader_state.cpu())
         
         # train and validate main loop
         logger.info("Train stats:\n"
@@ -293,13 +295,13 @@ class TrainManager(object):
     class TrainStatistics:
         def __init__(self, steps:int=0, is_min_lr:bool=False,
                         is_max_update:bool=False, total_tokens:int=0,
-                        best_ckpt_iter:int=0, best_ckpt_score: float=np.inf,
+                        best_ckpt_step:int=0, best_ckpt_score: float=np.inf,
                         minimize_metric: bool=True) -> None:
             self.steps = steps 
             self.is_min_lr = is_min_lr
             self.is_max_update = is_max_update
             self.total_tokens = total_tokens
-            self.best_ckpt_iter = best_ckpt_iter
+            self.best_ckpt_step = best_ckpt_step
             self.best_ckpt_score = best_ckpt_score
             self.minimize_metric = minimize_metric
         
@@ -334,9 +336,66 @@ class TrainManager(object):
             "steps": self.train_stats.steps,
             "total_tokens": self.train_stats.total_tokens,
             "best_ckpt_score": self.train_stats.best_ckpt_score,
-            "model_state": self.model.state_dict(),
+            "best_ckpt_step": self.train_stats.best_ckpt_step,
+            "model_state": model_state_dict,
             "optimizer_state": self.optimizer.state_dict(),
+            "scheduler_state": self.scheduler.state_dict(),
         }
+        torch.save(global_states, model_checkpoint_path)
+
+        def symlink_update(target:Path, link_name:Path):
+            """
+            Find the file that the symlink currently points to, sets it to
+            the new target, and return the previous target if it exists.
+            """
+            if link_name.is_symlink():
+                current_link = link_name.resolve()
+                link_name.unlink()
+                link_name.symlink_to(target)
+                return current_link
+            else:
+                link_name.symlink_to(target)
+                return None 
+
+        # how to update queue and keep the best number of ckpt.
+        symlink_target = Path(f"{self.train_stats.steps}.ckpt")
+        last_path = Path(self.model_dir) / "lastest.ckpt"
+        prev_path = symlink_update(symlink_target, last_path)
+        best_path = Path(self.model_dir) / "best.ckpt"
+        if new_best:
+            prev_best = symlink_update(symlink_target, best_path)
+            assert best_path.resolve().stem == str(self.train_stats.best_ckpt_step)
+        
+        def delete_ckpt(path:Path) -> None:
+            try:
+                logger.info("Delete %s", path)
+                path.unlink()
+            except FileNotFoundError as error:
+                logger.warning("Want to delete old checkpoint %s"
+                               "but file does not exist. (%s)", path, error)
+        
+        # push and pop from the heap queue.
+        to_delete = None 
+        if not math.isnan(score) and self.num_ckpts_keep > 0:
+            if len(self.ckpt_queue) < self.num_ckpts_keep: # don't need pop, only push
+                heapq.heappush(self.ckpt_queue, (score, model_checkpoint_path))
+            else:
+                if self.minimize_metric: # the smaller score, the better
+                    heapq._heapify_max(self.ckpt_queue) # change a list to a max-heap
+                    to_delete = heapq._heappop_max(self.ckpt_queue)
+                    heapq.heappush(self.ckpt_queue, (score, model_checkpoint_path))
+                else:
+                    to_delete = heapq.heappushpop(self.ckpt_queue, (score, model_checkpoint_path))
+            
+            if to_delete is not None:
+                assert to_delete[1] != model_checkpoint_path # don't delete the last ckpt
+                if to_delete[1].stem != best_path.resolve().stem:
+                    delete_ckpt(to_delete[1]) # don't delete the best ckpt
+            
+            assert len(self.ckpt_queue) <= self.num_ckpts_keep
+            if prev_path is not None and prev_path.stem not in [c[1].stem for c in self.ckpt_queue]:
+                delete_ckpt(prev_path)
+
 
 def train(cfg_file: str) -> None:
     """
