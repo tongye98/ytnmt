@@ -10,7 +10,7 @@ import operator
 import unicodedata
 import logging 
 import torch 
-from torch.utils.data import Dataset 
+from torch.utils.data import Dataset, RandomSampler, SequentialSampler
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 
@@ -368,6 +368,22 @@ class OurData(Data):
             return 0
         else:
             return super().__cat_dim__(key, value, *args, **kwargs)
+
+def make_data_loader(dataset: OurDataset, sampler_seed, shuffle, batch_size, numworkers, mode=None) -> DataLoader:
+    """
+    Return a torch DataLoader.
+    """
+    assert isinstance(dataset, Dataset), "For pytorch, dataset is based on torch.utils.data.Dataset"
+
+    if mode == "train" and shuffle is True:
+        generator = torch.Generator()
+        generator.manual_seed(sampler_seed)
+        sampler = RandomSampler(dataset, replacement=False, generator=generator)
+    else:
+        sampler = SequentialSampler(dataset)
+    
+    return DataLoader(dataset, batch_size=batch_size, sampler=sampler, 
+                      num_workers=numworkers, pin_memory=True)
 
 if __name__ == "__main__": 
     logger = logging.getLogger("")

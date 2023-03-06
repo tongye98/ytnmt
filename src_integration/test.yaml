@@ -33,7 +33,7 @@ data:
         filter_or_truncate: "truncate"
 
 training:
-    model_dir: "models/codescribe_java/base2"
+    model_dir: "test_dir"
     overwrite: True
     random_seed: 820
     use_cuda: True

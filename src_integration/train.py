@@ -10,7 +10,7 @@ import heapq
 import time 
 from functools import partial 
 from model import build_model
-from data import load_data, OurDataset
+from data import load_data, OurDataset, make_data_loader
 from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,16 @@ def load_config(path: Union[Path,str]="configs/transformer.yaml") -> Dict:
         cfg = yaml.safe_load(yamlfile)
     return cfg
 
-def make_logger(model_dir):
+def make_logger(model_dir:Path):
     logger = logging.getLogger("")
     logger.setLevel(level=logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+    
+    fh = logging.FileHandler(model_dir/"test.log")
+    fh.setLevel(level=logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
     sh.setFormatter(formatter)
@@ -75,19 +81,6 @@ class TrainManager(object):
         self.batch_size = train_cfg.get("batch_size", 32)
         self.seed = train_cfg.get('random_seed', 980820)
 
-        # learning rate and optimization & schedular
-        self.learning_rate_min = train_cfg.get("learning_rate_min", 1.0e-8)
-        self.clip_grad_function = self.build_gradient_clipper(train_cfg)
-        self.optimizer = self.build_optimizer(train_cfg, parameters=self.model.parameters())
-        self.scheduler, self.scheduler_step_at = self.build_scheduler(train_cfg, optimizer=self.optimizer)
-
-        # early stop
-        self.early_stop_metric = train_cfg.get("early_stop_metric", None)
-        if self.early_stop_metric in ["ppl", "loss"]:
-            self.minimize_metric = True # lower is better
-        elif self.early_stop_metric in ["acc", "bleu"]:
-            self.minimize_metric = False # higher is better
-
         # model 
         self.model = model
         if self.device.type == "cuda":
@@ -100,13 +93,27 @@ class TrainManager(object):
                 reset_scheduler=train_cfg.get("reset_scheduler", False),
                 reset_optimizer=train_cfg.get("reset_optimizer", False),
                 reset_iter_state=train_cfg.get("reset_iter_state", False))
+
+        # learning rate and optimization & schedular
+        self.learning_rate_min = train_cfg.get("learning_rate_min", 1.0e-8)
+        self.clip_grad_function = self.build_gradient_clipper(train_cfg)
+        self.optimizer = self.build_optimizer(train_cfg, parameters=self.model.parameters())
+        self.scheduler, self.scheduler_step_at = self.build_scheduler(train_cfg, optimizer=self.optimizer)
+
+        # early stop
+        self.early_stop_metric = train_cfg.get("early_stop_metric", None)
+        if self.early_stop_metric in ["ppl", "loss"]:
+            self.minimize_metric = True # lower is better
+        elif self.early_stop_metric in ["acc", "bleu"]:
+            self.minimize_metric = False # higher is better
         
         # initialize training process statistics
-        self.stats = self.TrainStatistics(
+        self.train_stats = self.TrainStatistics(
             steps=0, is_min_lr=False, is_max_update=False,
             total_tokens=0, best_ckpt_iter=0, minimize_metric=self.minimize_metric,
             best_ckpt_score=np.inf if self.minimize_metric else -np.inf,
         )
+        self.train_loader, self.train_loader_state = None, None
 
     def build_gradient_clipper(self, train_cfg:dict):
         """
@@ -176,15 +183,15 @@ class TrainManager(object):
         logger.info("Scheduler = %s", scheduler.__class__.__name__)
         return scheduler, scheduler_step_at
         
-    def train_and_validate(self, train_data:OurDataset, valid_data:OurDataset) -> None:
+    def train_and_validate(self, train_dataset:OurDataset, valid_dataset:OurDataset) -> None:
         """
         Train the model and validate it from time to time on the validation set.
         """
-        self.train_iter = make_data_iter(dataset=train_data, sampler_seed=self.seed, shuffle=self.shuffle, batch_type=self.batch_type,
-                                            batch_size=self.batch_size, num_workers=self.num_workers)
+        self.train_loader = make_data_loader(dataset=train_dataset, sampler_seed=self.seed, shuffle=self.shuffle,
+                                    batch_size=self.batch_size, num_workers=self.num_workers, mode="train")
 
-        if self.train_iter_state is not None:
-            self.train_iter.batch_sampler.sampler.generator.set_state(self.train_iter_state.cpu())
+        if self.train_loader_state is not None:
+            self.train_loader.batch_sampler.sampler.generator.set_state(self.train_loader_state.cpu())
         
         # train and validate main loop
         logger.info("Train stats:\n"
@@ -204,7 +211,7 @@ class TrainManager(object):
                 start_tokens = self.stats.total_tokens
                 epoch_loss = 0
 
-                for batch_data in self.train_iter:
+                for batch_data in self.train_loader:
                     batch_data.move2cuda(self.device)
                     normalized_batch_loss = self.train_step(batch_data)
                     
@@ -214,7 +221,7 @@ class TrainManager(object):
                     normalized_batch_loss.backward()
 
                     # clip gradients (in-place)
-                    if self.clip_grad_fun is not None:
+                    if self.clip_grad_function is not None:
                         self.clip_grad_fun(parameters=self.model.parameters())
                     
                     # make gradient step
@@ -237,7 +244,7 @@ class TrainManager(object):
                         self.stats.is_min_lr = True 
 
                     # log learning process and write tensorboard
-                    if self.stats.steps % self.logging_freq == 0:
+                    if self.stats.steps % self.logging_frequency == 0:
                         elapse_time = time.time() - start_time
                         elapse_token_num = self.stats.total_tokens - start_tokens
 
@@ -261,8 +268,8 @@ class TrainManager(object):
                     self.scheduler.step()
 
                 # validate on the entire dev dataset
-                if (epoch_no + 1) % self.validation_freq == 0:
-                    valid_duration_time = self.validate(valid_data)
+                if (epoch_no + 1) % self.valid_frequence == 0:
+                    valid_duration_time = self.validate(valid_dataset)
                     logger.info("Validation time = {}s.".format(valid_duration_time))
 
                 # check after a number of whole epoch.
@@ -275,7 +282,7 @@ class TrainManager(object):
                 logger.info("Training ended after %3d epoches!", epoch_no + 1)
 
             logger.info("Best Validation result (greedy) at step %8d: %6.2f %s.",
-                        self.stats.best_ckpt_iter, self.stats.best_ckpt_score, self.early_stopping_metric)
+                        self.stats.best_ckpt_iter, self.stats.best_ckpt_score, self.early_stop_metric)
                     
         except KeyboardInterrupt:
             self.save_model_checkpoint(False, float("nan"))
@@ -310,6 +317,26 @@ class TrainManager(object):
             else:
                 is_better = score > heapq.nsmallest(1, heap_queue)[0][0]
             return is_better
+    
+    def save_model_checkpoint(self, new_best:bool, score:float) -> None:
+        """
+        Save model's current parameters and the training state to a checkpoint.
+        The training state contains the total number of training steps, 
+                                    the total number of training tokens, 
+                                    the best checkpoint score and iteration so far, 
+                                    and optimizer and scheduler states.
+        new_best: for update best.ckpt
+        score: Validation score which is used as key of heap queue.
+        """        
+        model_checkpoint_path = Path(self.model_dir) / f"{self.train_stats.steps}.ckpt"
+        model_state_dict = self.model.state_dict()
+        global_states = {
+            "steps": self.train_stats.steps,
+            "total_tokens": self.train_stats.total_tokens,
+            "best_ckpt_score": self.train_stats.best_ckpt_score,
+            "model_state": self.model.state_dict(),
+            "optimizer_state": self.optimizer.state_dict(),
+        }
 
 def train(cfg_file: str) -> None:
     """
@@ -317,7 +344,7 @@ def train(cfg_file: str) -> None:
     """
     cfg = load_config(Path(cfg_file))
 
-    model_dir = None # FIXME
+    model_dir = Path(cfg["training"]["model_dir"])
     make_logger(model_dir)
 
     set_seed(seed=int(cfg["training"].get("random_seed", 820)))
