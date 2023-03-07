@@ -8,15 +8,16 @@ import os
 import numpy as np 
 import heapq
 import math 
+import shutil
 import time 
 from functools import partial 
-from model import build_model
+from model import build_model, Model
 from data import load_data, OurDataset, make_data_loader
 from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
 
-def load_config(path: Union[Path,str]="configs/transformer.yaml") -> Dict:
+def load_config(path: Union[Path,str]="test.yaml") -> Dict:
     if isinstance(path, str):
         path = Path(path)
     with path.open("r", encoding="utf-8") as yamlfile:
@@ -37,6 +38,7 @@ def make_logger(model_dir:Path):
     sh.setLevel(logging.INFO)
     sh.setFormatter(formatter)
     logger.addHandler(sh)
+
     logger.info("Hello! This is Tong Ye's Transformer!")
 
 def set_seed(seed:int) -> None:
@@ -50,11 +52,21 @@ def set_seed(seed:int) -> None:
         torch.backends.cudnn.deterministic = True
         torch.cuda.manual_seed_all(seed)
 
+def make_model_dir(model_dir:Path, overwrite:bool=False) -> Path:
+    model_dir = model_dir.absolute()
+    if model_dir.is_dir():
+        if not overwrite: # don't allow overwite the directory
+            raise FileExistsError(f"<model_dir> {model_dir} exists and don't allow overwrite.")
+        else:
+            shutil.rmtree(model_dir)
+    model_dir.mkdir()
+    return model_dir
+
 class TrainManager(object):
     """
     Manage the whole training loop and validation.
     """
-    def __init__(self, model, cfg) -> None:
+    def __init__(self, model:Model, cfg:dict):
         # File system 
         train_cfg = cfg["training"]
         self.model_dir = Path(train_cfg["model_dir"])
@@ -87,8 +99,8 @@ class TrainManager(object):
         if self.device.type == "cuda":
             self.model.to(self.device)
         
-        self.load_model = train_cfg.get("load_model", None)
-        if self.load_model is not None:
+        self.load_model = train_cfg.get("load_model", False)
+        if self.load_model is True:
             self.init_from_checkpoint(self.load_model,
                 reset_best_ckpt=train_cfg.get("reset_best_ckpt", False),
                 reset_scheduler=train_cfg.get("reset_scheduler", False),
@@ -141,11 +153,13 @@ class TrainManager(object):
         Create an optimizer for the given parameters as specified in config.
         """
         optimizer_name = train_cfg.get("optimizer", "adam").lower()
-        kwargs = {"lr": train_cfg.get("learning_rate", 3e-4), "weight_decay":train_cfg.get("weight_decay", 0)}
+        kwargs = {"lr": train_cfg.get("learning_rate", 3.0e-4), "weight_decay":train_cfg.get("weight_decay", 0),
+                  "betas": train_cfg.get("adam_betas", (0.9, 0.999)), "eps":train_cfg.get("eps", 1e-8)}
         if optimizer_name == "adam":
             # kwargs: lr, weight_decay; betas
             optimizer = torch.optim.Adam(params=parameters, **kwargs)
         elif optimizer_name == "sgd":
+            logger.warning("Use sgd optimizer, please double check.")
             # kwargs: lr, momentum; dampening; weight_decay; nestrov
             optimizer = torch.optim.SGD(parameters, **kwargs)
         else:
@@ -188,7 +202,7 @@ class TrainManager(object):
         logger.info("Scheduler = %s", scheduler.__class__.__name__)
         return scheduler, scheduler_step_at
         
-    def train_and_validate(self, train_dataset:OurDataset, valid_dataset:OurDataset) -> None:
+    def train_and_validate(self, train_dataset:OurDataset, valid_dataset:OurDataset):
         """
         Train the model and validate it from time to time on the validation set.
         """
@@ -446,8 +460,11 @@ def train(cfg_file: str) -> None:
     cfg = load_config(Path(cfg_file))
 
     model_dir = Path(cfg["training"]["model_dir"])
-    make_logger(model_dir)
+    overwrite = cfg["training"].get("overwrite", False)
+    model_dir = make_model_dir(model_dir, overwrite) # model_dir: absolute path
 
+    make_logger(model_dir)
+    assert False
     set_seed(seed=int(cfg["training"].get("random_seed", 820)))
 
     # load data

@@ -35,40 +35,44 @@ data:
 training:
     model_dir: "test_dir"
     overwrite: True
-    random_seed: 820
+
+    logging_frequence: 100
+    validation_frequence: 1000 # after how many epochs
+    log_valid_samples: [0,1,2]
+
     use_cuda: True
     num_workers: 4
-    optimizer: "adam"
-    adam_betas: [0.9, 0.999]
-    normalization: "batch"  # batch,tokens | batch means loss divide sentences in the batch; token means loss divide tokens in the batch.
-    loss: "CrossEntropy"
-    label_smoothing: 0.0
-    scheduling: "StepLR"    # "ReduceLROnPlateau", "StepLR", "ExponentialLR"
-    mode: "max"             # for schedule="ReduceLROnPlateau"
-    factor: 0.5             # for schedule="ReduceLROnPlateau"
-    patience: 5             # for scheduling = 'ReduceLROnPlatea'
-    step_size: 1            # for scheduling = "StepLR" 
-    gamma: 0.99             # for scheduling = "StepLR" or "ExponentialLR"
-    learning_rate: 0.0001
-    weight_decay: 0
-    learning_rate_min: 0.0000001
-    keep_best_ckpts: 3
-    logging_freq: 100
-    validation_freq: 2      # after how many epochs
-    log_valid_sentences: [0,1,2,3]
-    early_stopping_metric: "bleu"
-    shuffle: True
-    epochs: 200
-    max_updates: 800000 
+
+    epochs: 100
+    shuffle: True 
+    max_updates: 10000000
     batch_size: 32
-    batch_type: "sentence"
-    # load_model: None
+    ramdom_seed: 980820
+
+    load_model: False
     reset_best_ckpt: False
     reset_scheduler: False
-    reset_optimizer: False
+    reset_optimzer: False
     reset_iter_state: False
-    # clip_grad_val: 1
+
+    learning_rate: 0.0001
+    learning_rate_min: 1.0e-8
+    # clip_grad_val: 1 
     clip_grad_norm: 5.0
+    optimizer: "adam"
+    weight_decay: 0
+    adam_betas: [0.9, 0.999]
+    eps: 1e-8
+    early_stop_metric: "bleu"
+    scheduling: "StepLR" # "ReduceLROnPlateau", "StepLR", "ExponentialLR"
+    mode: "max"
+    factor: 0.5
+    patience: 5
+    step_size: 1
+    gamma: 0.99
+
+    num_ckpts_keep: 3
+
 
 testing:
     batch_size: 64
