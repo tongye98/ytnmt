@@ -12,7 +12,7 @@ import shutil
 import time 
 from functools import partial 
 from model import build_model, Model
-from data import load_data, OurDataset, make_data_loader
+from data import load_data, OurDataset, make_data_loader, OurData, PAD_ID
 from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
@@ -86,6 +86,7 @@ class TrainManager(object):
         num_workers = train_cfg.get("num_workers", 0)
         if num_workers > 0:
             self.num_workers = min(os.cpu_count(), num_workers)
+        logger.info("*"*20 + "{} num_workers are used.".format(self.num_workers) + "*"*20)
         
         # data & batch & epochs
         self.epochs = train_cfg.get("epochs", 100)
@@ -168,7 +169,7 @@ class TrainManager(object):
         logger.info("%s(%s)", optimizer.__class__.__name__, ", ".join([f"{key}={value}" for key,value in kwargs.items()]))
         return optimizer
     
-    def build_schedular(self, train_cfg:dict, optimizer: torch.optim.Optimizer):
+    def build_scheduler(self, train_cfg:dict, optimizer: torch.optim.Optimizer):
         """
         Create a learning rate scheduler if specified in train config and determine
         when a scheduler step should be executed.
@@ -224,11 +225,11 @@ class TrainManager(object):
                 
                 # Statistic for each epoch.
                 start_time = time.time()
-                start_tokens = self.stats.total_tokens
+                start_tokens = self.train_stats.total_tokens
                 epoch_loss = 0
 
                 for batch_data in self.train_loader:
-                    batch_data.move2cuda(self.device)
+                    batch_data.to(self.device)
                     normalized_batch_loss = self.train_step(batch_data)
                     
                     # reset gradients
@@ -247,36 +248,37 @@ class TrainManager(object):
                     epoch_loss += normalized_batch_loss.item()
 
                     # increment token counter
-                    self.stats.total_tokens += batch_data.ntokens
+                    # FIXME
+                    # self.stats.total_tokens += batch_data.ntokens
                     
                     # increment step counter
-                    self.stats.steps += 1
-                    if self.stats.steps >= self.max_updates:
-                        self.stats.is_max_update == True
+                    self.train_stats.steps += 1
+                    if self.train_stats.steps >= self.max_updates:
+                        self.train_stats.is_max_update = True
                     
                     # check current leraning rate(lr)
                     current_lr = self.optimizer.param_groups[0]["lr"]
                     if current_lr < self.learning_rate_min:
-                        self.stats.is_min_lr = True 
+                        self.train_stats.is_min_lr = True 
 
                     # log learning process and write tensorboard
-                    if self.stats.steps % self.logging_frequency == 0:
+                    if self.train_stats.steps % self.logging_frequency == 0:
                         elapse_time = time.time() - start_time
-                        elapse_token_num = self.stats.total_tokens - start_tokens
+                        elapse_token_num = self.train_stats.total_tokens - start_tokens
 
-                        self.tb_writer.add_scalar(tag="Train/batch_loss", scalar_value=normalized_batch_loss, global_step=self.stats.steps)
-                        self.tb_writer.add_scalar(tag="Train/learning_rate", scalar_value=current_lr, global_step=self.stats.steps)
+                        self.tb_writer.add_scalar(tag="Train/batch_loss", scalar_value=normalized_batch_loss, global_step=self.train_stats.steps)
+                        self.tb_writer.add_scalar(tag="Train/learning_rate", scalar_value=current_lr, global_step=self.train_stats.steps)
 
                         logger.info("Epoch %3d, Step: %7d, Batch Loss: %12.6f, Lr: %.6f, Tokens per sec: %6.0f",
-                        epoch_no + 1, self.stats.steps, normalized_batch_loss, self.optimizer.param_groups[0]["lr"],
+                        epoch_no + 1, self.train_stats.steps, normalized_batch_loss, self.optimizer.param_groups[0]["lr"],
                         elapse_token_num / elapse_time)
 
                         start_time = time.time()
-                        start_tokens = self.stats.total_tokens
+                        start_tokens = self.train_stats.total_tokens
                     
                     # decay learning_rate(lr)
                     if self.scheduler_step_at == "step":
-                        self.scheduler.step(self.stats.steps)
+                        self.scheduler.step(self.train_stats.steps)
 
                 logger.info("Epoch %3d: total training loss %.2f", epoch_no + 1, epoch_loss)
 
@@ -289,8 +291,8 @@ class TrainManager(object):
                     logger.info("Validation time = {}s.".format(valid_duration_time))
 
                 # check after a number of whole epoch.
-                if self.stats.is_min_lr or self.stats.is_max_update:
-                    log_string = (f"minimum learning rate {self.learning_rate_min}" if self.stats.is_min_lr else 
+                if self.train_stats.is_min_lr or self.train_stats.is_max_update:
+                    log_string = (f"minimum learning rate {self.learning_rate_min}" if self.train_stats.is_min_lr else 
                                     f"maximun number of updates(steps) {self.max_updates}")
                     logger.info("Training end since %s was reached!", log_string)
                     break 
@@ -298,13 +300,38 @@ class TrainManager(object):
                 logger.info("Training ended after %3d epoches!", epoch_no + 1)
 
             logger.info("Best Validation result (greedy) at step %8d: %6.2f %s.",
-                        self.stats.best_ckpt_iter, self.stats.best_ckpt_score, self.early_stop_metric)
+                        self.train_stats.best_ckpt_step, self.train_stats.best_ckpt_score, self.early_stop_metric)
                     
         except KeyboardInterrupt:
             self.save_model_checkpoint(False, float("nan"))
 
         self.tb_writer.close()
         return None 
+
+    def train_step(self, batch_data: OurData):
+        code_tokens = batch_data.code_tokens
+        ast_nodes = batch_data.ast_nodes
+        text_tokens = batch_data.text_tokens
+        ast_positions = batch_data.ast_positions
+        ast_edges = batch_data.ast_edges
+        # batch = batch_data.batch
+        # prt = batch_data.ptr
+        src_mask = (code_tokens != PAD_ID).unsqueeze(1) # src_mask (batch, 1, code_token_length)
+        text_tokens_input = text_tokens[:, :-1]
+        text_tokens_output = text_tokens[:, 1:]
+        # FIXME why is text_tokens output to make the trget mask
+        trg_mask = (text_tokens_output != PAD_ID).unsqueeze(1) # trg_mask (batch_size, 1, trg_length)
+
+        check_batch_data()
+        # get loss (run as during training with teacher forcing)
+        batch_loss = self.model(return_type="loss", src_input_code_token=code_tokens,
+                                src_input_ast_token=ast_nodes, src_input_ast_positions=ast_positions,
+                                trg_input=text_tokens_input, trg_truth=text_tokens_output,
+                                src_mask=src_mask, trg_mask=trg_mask) 
+        
+        normalized_batch_loss = batch_loss / self.batch_size
+        # normalized_batch_loss is the average-sentence level loss.
+        return normalized_batch_loss
     
     class TrainStatistics:
         def __init__(self, steps:int=0, is_min_lr:bool=False,
@@ -464,7 +491,7 @@ def train(cfg_file: str) -> None:
     model_dir = make_model_dir(model_dir, overwrite) # model_dir: absolute path
 
     make_logger(model_dir)
-    assert False
+
     set_seed(seed=int(cfg["training"].get("random_seed", 820)))
 
     # load data
@@ -477,7 +504,7 @@ def train(cfg_file: str) -> None:
     trainer = TrainManager(model=model, cfg=cfg)
 
     # train model
-    trainer.train_and_validata(train_data=train_data, valid_data=valid_data)
+    trainer.train_and_validate(train_data=train_data, valid_data=valid_data)
 
 if __name__ == "__main__":
     cfg_file = "test.yaml"

@@ -111,9 +111,9 @@ class XentLoss(nn.Module):
         batch_loss = self.criterion(log_probs, target)
         return batch_loss
     
-    def __repr__(self):
-        return (f"{self.__class__.__name__}(criterion={self.criterion}, "
-                f"smoothing={self.smoothing})")
+    # def __repr__(self):
+    #     return (f"{self.__class__.__name__}(criterion={self.criterion}, "
+    #             f"smoothing={self.smoothing})")
 
 class MultiHeadedAttention(nn.Module):
     """
@@ -450,10 +450,10 @@ class Embeddings(nn.Module):
         else:
             return self.lut(source)
 
-    def __repr__(self):
-        return (f"{self.__class__.__name__}("
-                f"embedding_dim={self.embedding_dim}, "
-                f"vocab_size={self.vocab_size})")
+    # def __repr__(self):
+    #     return (f"{self.__class__.__name__}("
+    #             f"embedding_dim={self.embedding_dim}, "
+    #             f"vocab_size={self.vocab_size})")
     
     def load_from_file(self, embed_path:Path, vocab=None) -> None:
         """
@@ -524,10 +524,10 @@ class TransformerEncoder(nn.Module):
         
         return input
     
-    def __repr__(self):
-        return (f"{self.__class__.__name__}(num_layers={len(self.layers)}, "
-                f"head_count={self.head_count}, " 
-                f"layer_norm_position={self.layer_norm_position})")
+    # def __repr__(self):
+    #     return (f"{self.__class__.__name__}(num_layers={len(self.layers)}, "
+    #             f"head_count={self.head_count}, " 
+    #             f"layer_norm_position={self.layer_norm_position})")
 
 class TransformerDecoder(nn.Module):
     """
@@ -580,10 +580,10 @@ class TransformerDecoder(nn.Module):
         output = input
         return output, penultimate_representation, cross_attention_weight
     
-    def __repr__(self):
-        return (f"{self.__class__.__name__}(num_layers={len(self.layers)}, "
-                f"head_count={self.head_count}, " 
-                f"layer_norm_position={self.layer_norm_position})")
+    # def __repr__(self):
+    #     return (f"{self.__class__.__name__}(num_layers={len(self.layers)}, "
+    #             f"head_count={self.head_count}, " 
+    #             f"layer_norm_position={self.layer_norm_position})")
     
 class GNNEncoder(nn.Module):
     def __init__(self, gnn_type, aggr, model_dim, num_layers) -> None:
@@ -747,9 +747,9 @@ def build_model(model_cfg: dict=None, vocab_info:dict=None):
     """
     logger.info("Build Model...")
     model = Model(model_cfg, vocab_info=vocab_info)
-    logger.info("The model is built.")
-    logger.info(model)
+    logger.debug(model)
     model.log_parameters_list()
+    logger.info("The model is built.")
     return model
 
 if __name__ == "__main__":
@@ -757,7 +757,7 @@ if __name__ == "__main__":
     logger.setLevel(level=logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
     sh = logging.StreamHandler()
-    sh.setLevel(logging.INFO)
+    sh.setLevel(logging.DEBUG)
     sh.setFormatter(formatter)
     logger.addHandler(sh)
     logger.info("Hello! This is Tong Ye's Transformer!")
