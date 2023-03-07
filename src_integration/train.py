@@ -369,7 +369,7 @@ class TrainManager(object):
         def delete_ckpt(path:Path) -> None:
             try:
                 logger.info("Delete %s", path)
-                path.unlink()
+                path.unlink()  # delete file
             except FileNotFoundError as error:
                 logger.warning("Want to delete old checkpoint %s"
                                "but file does not exist. (%s)", path, error)
@@ -379,16 +379,16 @@ class TrainManager(object):
         if not math.isnan(score) and self.num_ckpts_keep > 0:
             if len(self.ckpt_queue) < self.num_ckpts_keep: # don't need pop, only push
                 heapq.heappush(self.ckpt_queue, (score, model_checkpoint_path))
-            else:
+            else: # ckpt_queue already full.
                 if self.minimize_metric: # the smaller score, the better
                     heapq._heapify_max(self.ckpt_queue) # change a list to a max-heap
                     to_delete = heapq._heappop_max(self.ckpt_queue)
                     heapq.heappush(self.ckpt_queue, (score, model_checkpoint_path))
-                else:
+                else: # the higher score, the better
                     to_delete = heapq.heappushpop(self.ckpt_queue, (score, model_checkpoint_path))
             
             if to_delete is not None:
-                assert to_delete[1] != model_checkpoint_path # don't delete the last ckpt
+                assert to_delete[1] != model_checkpoint_path  # don't delete the last ckpt, double check
                 if to_delete[1].stem != best_path.resolve().stem:
                     delete_ckpt(to_delete[1]) # don't delete the best ckpt
             
