@@ -1,7 +1,7 @@
 import torch 
 import yaml
 import logging 
-from typing import Union, Dict, Generator
+from typing import Union, Dict, Generator, List
 from pathlib import Path 
 import random 
 import os 
@@ -332,6 +332,85 @@ class TrainManager(object):
         normalized_batch_loss = batch_loss / self.batch_size
         # normalized_batch_loss is the average-sentence level loss.
         return normalized_batch_loss
+
+    def validate(self, valid_data: OurDataset):
+        """
+        Validate on the valid dataset.
+        return the validate time.
+        """
+        validate_start_time = time.time()
+        # FIXME
+        # predict()
+        validate_duration_time = time.time() - validate_start_time
+
+        # write eval_metric and corresponding score to tensorboard
+        for eval_metric, score in valid_scores.items():
+            if eval_metric in ["loss", "ppl"]:
+                self.tb_writer.add_scalar(tag=f"valid/{eval_metric}",scalar_value=score, global_step=self.train_stats.steps)
+            else: # FIXME what the difference of if and else
+                self.tb_writer.add_scalar(tag=f"Valid/{eval_metric}",scalar_value=score, global_step=self.train_stats.steps)
+        
+        # the most important metric
+        ckpt_score = valid_scores[self.early_stop_metric]
+
+        # set scheduler
+        if self.scheduler_step_at == "validation":
+            self.scheduler.step(metrics=ckpt_score)
+
+        # update new best
+        new_best = self.train_stats.is_best(ckpt_score)
+        if new_best:
+            self.train_stats.best_ckpt_score = ckpt_score
+            self.train_stats.best_ckpt_step = self.train_stats.steps
+            logger.info("Horray! New best validation score [%s]!", self.early_stop_metric)
+
+        # save checkpoints
+        is_better = self.train_stats.is_better(ckpt_score, self.ckpt_queue) if len(self.ckpt_queue) > 0 else True
+        if is_better or self.num_ckpts_keep < 0:
+            self.save_model_checkpoint(new_best, ckpt_score)
+        
+        # append to validation report
+        self.add_validation_report(valid_scores=valid_scores, new_best=new_best)
+        self.log_examples(valid_hypotheses, valid_references, data=valid_data)
+
+        # store validation set outputs
+        validate_output_path = Path(self.model_dir) / f"{self.train_stats.steps}.hyps"
+        write_validattion_output_to_file(validate_output_path, valid_hypotheses)
+
+        # store attention plot for selected valid sentences
+        # TODO 
+
+        return validate_duration_time
+
+    
+    def add_validation_report(self, valid_scores:dict, new_best:bool):
+        """
+        Append a one-line report to validation logging file.
+        """
+        current_lr = self.optimizer.param_groups[0]["lr"]
+        valid_file = Path(self.model_dir) / "validation.log"
+        with valid_file.open("a", encoding="utf-8") as fg:
+            score_string = "\t".join([f"Steps: {self.train_stats.steps:7}"] + 
+            [f"{eval_metric}: {score:.2f}" if eval_metric in ["bleu", "meteor", "rouge-l"] 
+            else f"{eval_metric}: {score:.2f}" for eval_metric, score in valid_scores.items()] +
+            [f"LR: {current_lr:.8f}", "*" if new_best else ""])
+            fg.write(f"{score_string}\n") 
+    
+    def log_examples(self, hypotheses: List[str], references:List[str], dataset: OurDataset):
+        """
+        Log the first self.log_valid_senteces from given examples.
+        hypotheses: decoded hypotheses (list of strings)
+        references: decoded references (list of strings)
+        """
+        for id in self.log_valid_sentences:
+            if id >= len(hypotheses):
+                continue
+            logger.info("Example #%d", id)
+
+            # detokenized text:
+            logger.info("\tSource: %s", dataset[id])
+            logger.info("\tReference: %s", references[id])
+            logger.info("\tHypothesis: %s", hypotheses[id])
     
     class TrainStatistics:
         def __init__(self, steps:int=0, is_min_lr:bool=False,
