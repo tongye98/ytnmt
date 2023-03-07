@@ -396,6 +396,48 @@ class TrainManager(object):
             if prev_path is not None and prev_path.stem not in [c[1].stem for c in self.ckpt_queue]:
                 delete_ckpt(prev_path)
 
+    def init_from_checkpoint(self, path:Path, 
+                             reset_best_ckpt:bool=False, reset_scheduler:bool=False,
+                             reset_optimizer:bool=False, reset_iter_state:bool=False):
+        """
+        Initialize the training from a given checkpoint file.
+        The checkpoint file contain not only model parameters, but also 
+        scheduler and optimizer states.
+        """
+        logger.info("Loading model from %s", path)
+        assert path.is_file(), f"model checkpoint {path} not found!"
+        model_checkpoint = torch.load(path, map_location=self.device)
+        logger.info("Load model from %s", path)
+
+        # restore model parameters
+        self.model.load_state_dict(model_checkpoint["model_state"])
+
+        if not reset_optimizer:
+            self.optimizer.load_state_dict(model_checkpoint["optimizer_state"])
+        else:
+            logger.warning("Reset Optimizer.")
+        
+        if not reset_scheduler:
+            if model_checkpoint["scheduler_state"] is not None and self.scheduler is not None:
+                self.scheduler.load_state_dict(model_checkpoint["schedular_state"])
+        else:
+            logger.warning("Reset Scheduler.")
+
+        if not reset_best_ckpt:
+            self.train_stats.best_ckpt_score = model_checkpoint["best_ckpt_score"]
+            self.train_stats.best_ckpt_step = model_checkpoint["best_ckpt_step"]
+        else:
+            logger.warning("Reset tracking of the best checkpoints.")
+        
+        if not reset_iter_state:
+            assert "train_iter_state" in model_checkpoint
+            self.train_stats.steps = model_checkpoint["steps"]
+            self.train_stats.total_tokens = model_checkpoint["total_tokens"]
+        else:
+            logger.info("Reset data_loader (random seed: {%d}).", self.seed)
+        
+        if self.device.type == "cuda":
+            self.model.to(self.device)
 
 def train(cfg_file: str) -> None:
     """
