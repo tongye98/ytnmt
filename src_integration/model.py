@@ -515,7 +515,7 @@ class TransformerEncoder(nn.Module):
         embed_src [batch_size, src_len, embed_size]
         mask: indicates padding areas (zeros where padding) [batch_size, 1, src_len]
         """
-
+        input = embed_src
         for layer in self.layers:
             input = layer(input, mask)
         

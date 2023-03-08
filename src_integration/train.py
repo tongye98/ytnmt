@@ -230,7 +230,7 @@ class TrainManager(object):
 
                 for batch_data in self.train_loader:
                     batch_data.to(self.device)
-                    normalized_batch_loss = self.train_step(batch_data)
+                    normalized_batch_loss, ntokens = self.train_step(batch_data)
                     
                     # reset gradients
                     self.optimizer.zero_grad()
@@ -248,8 +248,7 @@ class TrainManager(object):
                     epoch_loss += normalized_batch_loss.item()
 
                     # increment token counter
-                    # FIXME
-                    # self.stats.total_tokens += batch_data.ntokens
+                    self.train_stats.total_tokens += ntokens
                     
                     # increment step counter
                     self.train_stats.steps += 1
@@ -317,21 +316,53 @@ class TrainManager(object):
         # batch = batch_data.batch
         # prt = batch_data.ptr
         src_mask = (code_tokens != PAD_ID).unsqueeze(1) # src_mask (batch, 1, code_token_length)
+        # src_mask: normal is True; pad is False
         text_tokens_input = text_tokens[:, :-1]
         text_tokens_output = text_tokens[:, 1:]
         # FIXME why is text_tokens output to make the trget mask
         trg_mask = (text_tokens_output != PAD_ID).unsqueeze(1) # trg_mask (batch_size, 1, trg_length)
+        # trg_mask: normal is True, pad is False
+        ntokens = (text_tokens_output != PAD_ID).data.sum().item()
 
-        check_batch_data()
+
+        # self.unittest_batch_data(code_tokens, ast_nodes, text_tokens, ast_positions, ast_edges, 
+        #                                src_mask, text_tokens_input, text_tokens_output, trg_mask, ntokens)
+
         # get loss (run as during training with teacher forcing)
         batch_loss = self.model(return_type="loss", src_input_code_token=code_tokens,
-                                src_input_ast_token=ast_nodes, src_input_ast_positions=ast_positions,
+                                src_input_ast_token=ast_nodes, src_input_ast_position=ast_positions,
                                 trg_input=text_tokens_input, trg_truth=text_tokens_output,
                                 src_mask=src_mask, trg_mask=trg_mask) 
-        
+        logger.warning("batch_loss = {}".format(batch_loss))
         normalized_batch_loss = batch_loss / self.batch_size
         # normalized_batch_loss is the average-sentence level loss.
-        return normalized_batch_loss
+        logger.warning("normalized_batch_loss = {}".format(normalized_batch_loss))
+        logger.warning("ntokens = {}".format(ntokens))
+        assert False
+        return normalized_batch_loss, ntokens
+
+    def unittest_batch_data(self, code_tokens, ast_nodes, text_tokens, ast_positions, 
+                                  ast_edges, src_mask, text_tokens_input, text_tokens_output, trg_mask, ntokens):
+        logger.warning("code token shape = {}".format(code_tokens.size()))
+        logger.warning("code token = {}".format(code_tokens))
+        logger.warning("ast_nodes shape = {}".format(ast_nodes.size()))
+        logger.warning("ast_nodes = {}".format(ast_nodes))
+        logger.warning("text token shape = {}".format(text_tokens.size()))
+        logger.warning("text token = {}".format(text_tokens))
+        logger.warning("ast_position shape = {}".format(ast_positions.size()))
+        logger.warning("ast_position = {}".format(ast_positions))
+        logger.warning("ast edges shape = {}".format(ast_edges.size()))
+        logger.warning("ast_edges = {}".format(ast_edges))
+        logger.warning("src_mask shape = {}".format(src_mask.size()))
+        logger.warning("src_mask = {}".format(src_mask))
+        logger.warning("text_token_input shape = {}".format(text_tokens_input.size()))
+        logger.warning("text_token_input = {}".format(text_tokens_input))
+        logger.warning("text_tokens_output shape = {}".format(text_tokens_output.size()))
+        logger.warning("text_tokens_output = {}".format(text_tokens_output))
+        logger.warning("trg_mask shape = {}".format(trg_mask.size()))
+        logger.warning("trg_mask = {}".format(trg_mask))
+        logger.warning("ntokens = {}".format(ntokens))
+        assert False
 
     def validate(self, valid_data: OurDataset):
         """
@@ -574,7 +605,7 @@ def train(cfg_file: str) -> None:
     set_seed(seed=int(cfg["training"].get("random_seed", 820)))
 
     # load data
-    train_data, valid_data, test_data, vocab_info = load_data(data_cfg=cfg["data"])
+    train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
     
     # build model
     model = build_model(model_cfg=cfg["model"], vocab_info=vocab_info)
@@ -583,7 +614,7 @@ def train(cfg_file: str) -> None:
     trainer = TrainManager(model=model, cfg=cfg)
 
     # train model
-    trainer.train_and_validate(train_data=train_data, valid_data=valid_data)
+    trainer.train_and_validate(train_dataset=train_dataset, valid_dataset=valid_dataset)
 
 if __name__ == "__main__":
     cfg_file = "test.yaml"

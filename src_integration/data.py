@@ -369,7 +369,7 @@ class OurData(Data):
         else:
             return super().__cat_dim__(key, value, *args, **kwargs)
 
-def make_data_loader(dataset: OurDataset, sampler_seed, shuffle, batch_size, numworkers, mode=None) -> DataLoader:
+def make_data_loader(dataset: OurDataset, sampler_seed, shuffle, batch_size, num_workers, mode=None) -> DataLoader:
     """
     Return a torch DataLoader.
     """
@@ -383,7 +383,7 @@ def make_data_loader(dataset: OurDataset, sampler_seed, shuffle, batch_size, num
         sampler = SequentialSampler(dataset)
     
     return DataLoader(dataset, batch_size=batch_size, sampler=sampler, 
-                      num_workers=numworkers, pin_memory=True)
+                      num_workers=num_workers, pin_memory=True)
 
 if __name__ == "__main__": 
     logger = logging.getLogger("")
