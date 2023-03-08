@@ -313,7 +313,7 @@ class TrainManager(object):
         text_tokens = batch_data.text_tokens
         ast_positions = batch_data.ast_positions
         ast_edges = batch_data.ast_edges
-        # batch = batch_data.batch
+        node_batch = batch_data.batch
         # prt = batch_data.ptr
         src_mask = (code_tokens != PAD_ID).unsqueeze(1) # src_mask (batch, 1, code_token_length)
         # src_mask: normal is True; pad is False
@@ -327,12 +327,15 @@ class TrainManager(object):
 
         # self.unittest_batch_data(code_tokens, ast_nodes, text_tokens, ast_positions, ast_edges, 
         #                                src_mask, text_tokens_input, text_tokens_output, trg_mask, ntokens)
+        # assert false
 
         # get loss (run as during training with teacher forcing)
         batch_loss = self.model(return_type="loss", src_input_code_token=code_tokens,
                                 src_input_ast_token=ast_nodes, src_input_ast_position=ast_positions,
+                                node_batch=node_batch, edge_index=ast_edges,
                                 trg_input=text_tokens_input, trg_truth=text_tokens_output,
                                 src_mask=src_mask, trg_mask=trg_mask) 
+        
         logger.warning("batch_loss = {}".format(batch_loss))
         normalized_batch_loss = batch_loss / self.batch_size
         # normalized_batch_loss is the average-sentence level loss.
@@ -362,7 +365,7 @@ class TrainManager(object):
         logger.warning("trg_mask shape = {}".format(trg_mask.size()))
         logger.warning("trg_mask = {}".format(trg_mask))
         logger.warning("ntokens = {}".format(ntokens))
-        assert False
+        
 
     def validate(self, valid_data: OurDataset):
         """

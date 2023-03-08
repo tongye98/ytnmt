@@ -324,17 +324,19 @@ class TransformerDecoderLayer(nn.Module):
         self.model_dim = model_dim
         self.trg_trg_attention = MultiHeadedAttention(head_count, model_dim, dropout, max_relative_position, use_negative_distance)
         self.src_trg_attention = MultiHeadedAttention(head_count, model_dim, dropout, max_relative_position=0, use_negative_distance=False)
+        self.gnn_trg_attention = MultiHeadedAttention(head_count, model_dim, dropout, max_relative_position=0, use_negative_distance=False)
 
         self.feed_forward = PositionwiseFeedForward(model_dim, ff_dim, dropout=dropout, layer_norm_position=layer_norm_position)
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(model_dim)
         self.layer_norm2 = nn.LayerNorm(model_dim)
+        self.layer_norm3 = nn.LayerNorm(model_dim)
 
         self.layer_norm_position = layer_norm_position
         assert self.layer_norm_position in {'pre','post'}
 
-    def forward(self, input:Tensor, memory:Tensor,
-                src_mask: Tensor, trg_mask:Tensor) -> Tensor:
+    def forward(self, trg_input:Tensor, code_encoder_memory:Tensor, ast_encoder_memory:Tensor,
+                src_mask: Tensor, node_mask:None, trg_mask:Tensor) -> Tensor:
         """
         Forward pass for a single transformer decoer layer.
         input [batch_size, trg_len, model_dim]
@@ -345,19 +347,28 @@ class TransformerDecoderLayer(nn.Module):
             output [batch_size, trg_len, model_dim]
             cross_attention_weight [batch_size, trg_len, src_len]
         """
-        residual = input
+        residual = trg_input
         if self.layer_norm_position == 'pre':
-            input = self.layer_norm(input)
-        self_attention_output, _ = self.trg_trg_attention(input,input,input, mask=trg_mask)
+            trg_input = self.layer_norm(trg_input)
+        self_attention_output, _ = self.trg_trg_attention(trg_input,trg_input,trg_input, mask=trg_mask)
         cross_attention_input = self.dropout(self_attention_output) + residual
 
         if self.layer_norm_position == 'post':
             cross_attention_input = self.layer_norm(cross_attention_input)
-
+        
         cross_residual = cross_attention_input
-        if self.layer_norm_position == 'pre':
+        if self.layer_norm_position == "pre":
             cross_attention_input = self.layer_norm2(cross_attention_input)
-        cross_attention_output, cross_attention_weight = self.src_trg_attention(memory, memory, cross_attention_input,mask=src_mask)
+        cross_attention_output, cross_attention_weight = self.gnn_trg_attention(ast_encoder_memory, ast_encoder_memory,
+                                                                                cross_attention_input, mask=node_mask)
+        src_trg_attention_input = self.dropout(cross_attention_output) + cross_residual
+        if self.layer_norm_position == 'post':
+            src_trg_attention_input = self.layer_norm2(src_trg_attention_input)
+
+        cross_residual = src_trg_attention_input
+        if self.layer_norm_position == 'pre':
+            src_trg_attention_input = self.layer_norm2(src_trg_attention_input)
+        cross_attention_output, cross_attention_weight = self.src_trg_attention(code_encoder_memory, code_encoder_memory, src_trg_attention_input,mask=src_mask)
         feedforward_input = self.dropout(cross_attention_output) + cross_residual
 
         if self.layer_norm_position == 'post':
@@ -551,34 +562,41 @@ class TransformerDecoder(nn.Module):
         if freeze:
             freeze_params(self)
     
-    def forward(self, embed_trg:Tensor, encoder_output:Tensor,
-                src_mask:Tensor, trg_mask:Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+    def forward(self, 
+                transformer_encoder_output: Tensor,
+                gnn_encoder_output:Tensor, 
+                trg_input:Tensor,
+                src_mask:Tensor,
+                node_mask: Tensor, 
+                trg_mask:Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         """
         Transformer decoder forward pass.
         embed_trg [batch_size, trg_len, model_dim]
         encoder_ouput [batch_size, src_len, model_dim]
         src_mask [batch_size, 1, src_len]
+        node_mask [batch_size, node_len]
         trg_mask [batch_size, 1, trg_len]
         return:
             output [batch_size, trg_len, model_dim]  
             cross_attention_weight [batch_size, trg_len, src_len]
         """
 
-        trg_mask = trg_mask & subsequent_mask(embed_trg.size(1)).type_as(trg_mask)
+        trg_mask = trg_mask & subsequent_mask(trg_input.size(1)).type_as(trg_mask)
         # trg_mask [batch_size, 1, trg_len] -> [batch_size, trg_len, trg_len] (include mask the token unseen)
+        node_mask = node_mask.unsqueeze(1) # [batch_size, 1, node_len]
 
         penultimate = None
         for layer in self.layers:
-            penultimate = input
-            input, cross_attention_weight = layer(input, code_encoder_memory=encoder_output, 
-                                                  src_mask=src_mask, trg_mask=trg_mask)
+            penultimate = trg_input
+            trg_input, cross_attention_weight = layer(trg_input, code_encoder_memory=transformer_encoder_output, 
+                ast_encoder_memory=gnn_encoder_output, src_mask=src_mask, node_mask=node_mask, trg_mask=trg_mask)
         
-        penultimate_representation = self.layers[-1].context_representation(penultimate, encoder_output, src_mask, trg_mask)
+        penultimate_representation = self.layers[-1].context_representation(penultimate, transformer_encoder_output, src_mask, trg_mask)
 
         if self.layer_norm is not None:
-            input = self.layer_norm(input)
+            trg_input = self.layer_norm(trg_input)
         
-        output = input
+        output = trg_input
         return output, penultimate_representation, cross_attention_weight
     
     # def __repr__(self):
@@ -592,9 +610,12 @@ class GNNEncoder(nn.Module):
         self.layers = nn.ModuleList([GNNEncoderLayer(model_dim=model_dim, GNN=gnn_type, aggr=aggr)
                                       for _ in range(num_layers)])
     
-    def forward(self, input, node_batch):
+    def forward(self, node_feature, edge_index, node_batch):
         """
         Input: 
+            # FIXME
+            node_feature: [batch, ]
+            edge_index: [2, edge_number]
             node_batch: {0,0, 1, ..., B-1} | indicate node in which graph.
         Return 
             output: [batch, Nmax, node_dim]
@@ -602,9 +623,9 @@ class GNNEncoder(nn.Module):
             Nmax: max node number in a batch.
         """
         for layer in self.layers:
-            input = layer(input)
+            node_feature = layer(node_feature, edge_index)
         if node_batch is not None:
-            output, mask = to_dense_batch(input, batch=node_batch)
+            output, mask = to_dense_batch(node_feature, batch=node_batch)
         return output, mask
 
 class Model(nn.Module):
@@ -655,7 +676,7 @@ class Model(nn.Module):
                            freeze=embedding_cfg['freeze'])
         
         # learnable_embed: for code token with learnable position embedding 
-        self.learnable_embed = LearnablePositionalEncoding(model_dim=transformer_encoder_cfg["model_dim"], 
+        self.code_learnable_embed = LearnablePositionalEncoding(model_dim=transformer_encoder_cfg["model_dim"], 
                                     max_len=transformer_encoder_cfg["max_src_len"])
 
         # position_embed: for ast token with triplet position embedding 
@@ -672,16 +693,23 @@ class Model(nn.Module):
                            padding_index=vocab_info["trg_vocab"]["pad_index"],
                            freeze=embedding_cfg['freeze'])
         
+        self.trg_learnable_embed = LearnablePositionalEncoding(model_dim=transformer_decoder_cfg["model_dim"],
+                                                               max_len=transformer_decoder_cfg["max_trg_len"])
+        
+        self.code_emb_dropout = nn.Dropout(transformer_encoder_cfg["dropout"])
+        self.ast_node_emb_dropout = nn.Dropout(gnn_encoder_cfg["dropout"])
+        self.text_emb_dropout = nn.Dropout(transformer_decoder_cfg["dropout"])
+        
         self.output_layer = nn.Linear(transformer_decoder_cfg["model_dim"], vocab_info["trg_vocab"]["size"], bias=False)
 
         self.loss_function = XentLoss(pad_index=vocab_info["trg_vocab"]["pad_index"], smoothing=0)
-
 
     def forward(self, return_type:str=None,
                 src_input_code_token:Tensor=None, 
                 src_input_ast_token:Tensor=None,
                 src_input_ast_position:Tensor=None,
                 node_batch: Tensor=None,
+                edge_index: Tensor=None,
                 trg_input:Tensor=None,
                 trg_truth:Tensor=None,
                 src_mask:Tensor=None,
@@ -690,9 +718,10 @@ class Model(nn.Module):
         Input:
             return_type: loss, encode_decode, encode.
             src_input_code_token: [batch_size, src_code_token_len]
-            src_input_ast_token: [batch_size, src_ast_token_len]
-            src_input_ast_position: [batch_size, src_ast_token_len]
-            node_batch: []
+            src_input_ast_token: [src_ast_token_len(all batch)]
+            src_input_ast_position: [src_ast_token_len(all batch)]
+            node_batch: [src_ast_token_len(all batch)]
+            edge_index: [2, edge_number(all batch)]
             trg_input: [batch_size, trg_len]
             trg_truth: [batch_size, trg_len]
             src_mask: [batch_size, 1, src_len] 0 means be ignored.
@@ -703,15 +732,19 @@ class Model(nn.Module):
             embed_src_code_token = self.src_embed(src_input_code_token)
             embed_src_ast_token = self.src_embed(src_input_ast_token)
 
-            transformer_encoder_input = self.learnable_embed(embed_src_code_token)
+            transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
+            transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)
             gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
+            gnn_encoder_input = self.ast_node_emb_dropout(gnn_encoder_input)
 
             transformer_encoder_output = self.transformer_encoder(transformer_encoder_input, src_mask)
-            gnn_encoder_output, node_mask = self.gnn_encoder(gnn_encoder_input, node_batch)
+            gnn_encoder_output, node_mask = self.gnn_encoder(gnn_encoder_input, edge_index, node_batch)
 
-
-            transformer_decoder_output = self.transformer_decoder(transformer_encoder_output, 
-                                        gnn_encoder_output, trg_input, src_mask, node_mask, trg_mask)
+            embed_trg_input = self.trg_embed(trg_input)
+            decoder_trg_input = self.trg_learnable_embed(embed_trg_input)
+            decoder_trg_input = self.text_emb_dropout(decoder_trg_input)
+            transformer_decoder_output, _, _ = self.transformer_decoder(transformer_encoder_output, 
+                                        gnn_encoder_output, decoder_trg_input, src_mask, node_mask, trg_mask)
             # transformer_decoder_output [batch_size, trg_size, model_dim]
             
             logits = self.output_layer(transformer_decoder_output) 

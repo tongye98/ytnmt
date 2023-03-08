@@ -1,690 +1,376 @@
-2023-03-08 13:45:06,046 - INFO - root - Hello! This is Tong Ye's Transformer!
-2023-03-08 13:45:25,503 - INFO - data - average code tokens = 109.22228597658939
-2023-03-08 13:45:25,503 - INFO - data - average ast tokens = 188.96867110397062
-2023-03-08 13:45:25,503 - INFO - data - average text tokens = 15.87554509983934
-2023-03-08 13:45:25,503 - INFO - data - average position tokens = 188.96867110397062
-2023-03-08 13:45:25,503 - INFO - data - average ast edges = 375.93734220794124
-2023-03-08 13:45:28,772 - INFO - data - code vocab length = 13367
-2023-03-08 13:45:28,772 - INFO - data - text vocab length = 6991
-2023-03-08 13:45:28,772 - INFO - data - position vocab length = 13753
-2023-03-08 13:45:31,319 - INFO - model - Build Model...
-2023-03-08 13:45:31,771 - DEBUG - model - Model(
-	Transformer_encoder=TransformerEncoder(
-  (layers): ModuleList(
-    (0): TransformerEncoderLayer(
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (src_src_attenion): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-    )
-    (1): TransformerEncoderLayer(
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (src_src_attenion): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-    )
-    (2): TransformerEncoderLayer(
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (src_src_attenion): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-    )
-    (3): TransformerEncoderLayer(
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (src_src_attenion): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-    )
-    (4): TransformerEncoderLayer(
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (src_src_attenion): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-    )
-    (5): TransformerEncoderLayer(
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (src_src_attenion): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-    )
-  )
-  (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-),
-	GNN_encoder=GNNEncoder(
-  (layers): ModuleList(
-    (0): GNNEncoderLayer(
-      (gnn): SAGEConv(512, 512, aggr=mean)
-      (relu): ReLU()
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (1): GNNEncoderLayer(
-      (gnn): SAGEConv(512, 512, aggr=mean)
-      (relu): ReLU()
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (2): GNNEncoderLayer(
-      (gnn): SAGEConv(512, 512, aggr=mean)
-      (relu): ReLU()
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (3): GNNEncoderLayer(
-      (gnn): SAGEConv(512, 512, aggr=mean)
-      (relu): ReLU()
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (4): GNNEncoderLayer(
-      (gnn): SAGEConv(512, 512, aggr=mean)
-      (relu): ReLU()
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (5): GNNEncoderLayer(
-      (gnn): SAGEConv(512, 512, aggr=mean)
-      (relu): ReLU()
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-  )
-),
-	Transformer_decoder=TransformerDecoder(
-  (layers): ModuleList(
-    (0): TransformerDecoderLayer(
-      (trg_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (src_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (layer_norm2): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (1): TransformerDecoderLayer(
-      (trg_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (src_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (layer_norm2): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (2): TransformerDecoderLayer(
-      (trg_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (src_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (layer_norm2): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (3): TransformerDecoderLayer(
-      (trg_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (src_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (layer_norm2): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (4): TransformerDecoderLayer(
-      (trg_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (src_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (layer_norm2): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-    (5): TransformerDecoderLayer(
-      (trg_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (src_trg_attention): MultiHeadedAttention(
-        (key_project): Linear(in_features=512, out_features=512, bias=True)
-        (query_project): Linear(in_features=512, out_features=512, bias=True)
-        (value_project): Linear(in_features=512, out_features=512, bias=True)
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-        (output_layer): Linear(in_features=512, out_features=512, bias=True)
-      )
-      (feed_forward): PositionwiseFeedForward(
-        (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-        (pwff): Sequential(
-          (0): Linear(in_features=512, out_features=2048, bias=True)
-          (1): ReLU()
-          (2): Dropout(p=0.2, inplace=False)
-          (3): Linear(in_features=2048, out_features=512, bias=True)
-          (4): Dropout(p=0.2, inplace=False)
-        )
-      )
-      (dropout): Dropout(p=0.2, inplace=False)
-      (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-      (layer_norm2): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-    )
-  )
-  (layer_norm): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
-),
-	src_embed=Embeddings(
-  (lut): Embedding(13367, 512, padding_idx=1)
-),
-	learnable_embed=LearnablePositionalEncoding(
-  (learn_lut): Embedding(400, 512)
-),
-	position_embed=Embeddings(
-  (lut): Embedding(13753, 512, padding_idx=1)
-),
-	trg_embed=Embeddings(
-  (lut): Embedding(6991, 512, padding_idx=1)
-),
-	loss_function=XentLoss(
-  (criterion): NLLLoss()
-))
-2023-03-08 13:45:31,775 - INFO - model - Total parameters number: 68544512
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.layer_norm.weight               [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.layer_norm.bias                 [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.key_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.key_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.query_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.query_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.value_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.value_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.output_layer.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.output_layer.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.layer_norm.weight               [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.layer_norm.bias                 [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.key_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.key_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.query_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.query_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.value_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.value_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.output_layer.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.output_layer.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.layer_norm.weight               [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.layer_norm.bias                 [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.key_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.key_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.query_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.query_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.value_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.value_project.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.output_layer.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.output_layer.bias [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.layer_norm.weight               [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.layer_norm.bias                 [512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.key_project.weight [512, 512]
-2023-03-08 13:45:31,776 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.key_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.query_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.query_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.value_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.value_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.output_layer.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.output_layer.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.layer_norm.weight               [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.layer_norm.bias                 [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.key_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.key_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.query_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.query_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.value_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.value_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.output_layer.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.output_layer.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.layer_norm.weight               [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.layer_norm.bias                 [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.key_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.key_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.query_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.query_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.value_project.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.value_project.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.output_layer.weight [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.output_layer.bias [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layer_norm.weight                        [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): transformer_encoder.layer_norm.bias                          [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.gnn.lin_l.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.gnn.lin_l.bias                          [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.gnn.lin_r.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.layer_norm.weight                       [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.layer_norm.bias                         [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.gnn.lin_l.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.gnn.lin_l.bias                          [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.gnn.lin_r.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.layer_norm.weight                       [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.layer_norm.bias                         [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.gnn.lin_l.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.gnn.lin_l.bias                          [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.gnn.lin_r.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.layer_norm.weight                       [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.layer_norm.bias                         [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.gnn.lin_l.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.gnn.lin_l.bias                          [512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.gnn.lin_r.weight                        [512, 512]
-2023-03-08 13:45:31,777 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.layer_norm.weight                       [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.layer_norm.bias                         [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.gnn.lin_l.weight                        [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.gnn.lin_l.bias                          [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.gnn.lin_r.weight                        [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.layer_norm.weight                       [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.layer_norm.bias                         [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.gnn.lin_l.weight                        [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.gnn.lin_l.bias                          [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.gnn.lin_r.weight                        [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.layer_norm.weight                       [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.layer_norm.bias                         [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm.weight               [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm.bias                 [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm2.weight              [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm2.bias                [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm.weight               [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm.bias                 [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm2.weight              [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm2.bias                [512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,778 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm.weight               [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm.bias                 [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm2.weight              [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm2.bias                [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm.weight               [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm.bias                 [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm2.weight              [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm2.bias                [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,779 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm.weight               [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm.bias                 [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm2.weight              [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm2.bias                [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.key_project.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.key_project.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.query_project.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.query_project.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.value_project.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.value_project.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.output_layer.weight [512, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.output_layer.bias [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.layer_norm.weight  [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.layer_norm.bias    [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.0.weight      [2048, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.0.bias        [2048]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.3.weight      [512, 2048]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.3.bias        [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm.weight               [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm.bias                 [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm2.weight              [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm2.bias                [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layer_norm.weight                        [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): transformer_decoder.layer_norm.bias                          [512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): src_embed.lut.weight                                         [13367, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): learnable_embed.learn_lut.weight                             [400, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): position_embed.lut.weight                                    [13753, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): trg_embed.lut.weight                                         [6991, 512]
-2023-03-08 13:45:31,780 - DEBUG - model - Trainable parameters(name): output_layer.weight                                          [6991, 512]
-2023-03-08 13:45:31,780 - INFO - model - The model is built.
-2023-03-08 13:45:31,782 - INFO - __main__ - ********************8 GPUs are used.********************
-2023-03-08 13:45:31,782 - INFO - __main__ - ********************4 num_workers are used.********************
-2023-03-08 13:45:32,928 - INFO - __main__ - Adam(lr=0.0001, weight_decay=0, betas=[0.9, 0.999], eps=1e-08)
-2023-03-08 13:45:32,928 - INFO - __main__ - Scheduler = StepLR
-2023-03-08 13:45:32,928 - INFO - __main__ - Train stats:
+2023-03-08 19:50:08,984 - INFO - root - Hello! This is Tong Ye's Transformer!
+2023-03-08 19:50:27,396 - INFO - data - average code tokens = 109.22228597658939
+2023-03-08 19:50:27,396 - INFO - data - average ast tokens = 188.96867110397062
+2023-03-08 19:50:27,396 - INFO - data - average text tokens = 15.87554509983934
+2023-03-08 19:50:27,396 - INFO - data - average position tokens = 188.96867110397062
+2023-03-08 19:50:27,396 - INFO - data - average ast edges = 375.93734220794124
+2023-03-08 19:50:30,471 - INFO - data - code vocab length = 13367
+2023-03-08 19:50:30,471 - INFO - data - text vocab length = 6991
+2023-03-08 19:50:30,471 - INFO - data - position vocab length = 13753
+2023-03-08 19:50:33,029 - INFO - model - Build Model...
+2023-03-08 19:50:33,494 - INFO - model - Total parameters number: 74880000
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.layer_norm.weight               [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.layer_norm.bias                 [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.key_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.key_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.query_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.query_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.value_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.value_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.output_layer.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.src_src_attenion.output_layer.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.0.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.layer_norm.weight               [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.layer_norm.bias                 [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.key_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.key_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.query_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.query_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.value_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.value_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.output_layer.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.src_src_attenion.output_layer.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.1.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.layer_norm.weight               [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.layer_norm.bias                 [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.key_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.key_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.query_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.query_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.value_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.value_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.output_layer.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.src_src_attenion.output_layer.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.2.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.layer_norm.weight               [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.layer_norm.bias                 [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.key_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.key_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.query_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.query_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.value_project.weight [512, 512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.value_project.bias [512]
+2023-03-08 19:50:33,495 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.output_layer.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.src_src_attenion.output_layer.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.3.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.layer_norm.weight               [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.layer_norm.bias                 [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.key_project.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.key_project.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.query_project.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.query_project.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.value_project.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.value_project.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.output_layer.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.src_src_attenion.output_layer.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.4.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.layer_norm.weight               [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.layer_norm.bias                 [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.key_project.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.key_project.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.query_project.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.query_project.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.value_project.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.value_project.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.output_layer.weight [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.src_src_attenion.output_layer.bias [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layers.5.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layer_norm.weight                        [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): transformer_encoder.layer_norm.bias                          [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.gnn.lin_l.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.gnn.lin_l.bias                          [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.gnn.lin_r.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.layer_norm.weight                       [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.0.layer_norm.bias                         [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.gnn.lin_l.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.gnn.lin_l.bias                          [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.gnn.lin_r.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.layer_norm.weight                       [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.1.layer_norm.bias                         [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.gnn.lin_l.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.gnn.lin_l.bias                          [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.gnn.lin_r.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.layer_norm.weight                       [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.2.layer_norm.bias                         [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.gnn.lin_l.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.gnn.lin_l.bias                          [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.gnn.lin_r.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.layer_norm.weight                       [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.3.layer_norm.bias                         [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.gnn.lin_l.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.gnn.lin_l.bias                          [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.gnn.lin_r.weight                        [512, 512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.layer_norm.weight                       [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.4.layer_norm.bias                         [512]
+2023-03-08 19:50:33,496 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.gnn.lin_l.weight                        [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.gnn.lin_l.bias                          [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.gnn.lin_r.weight                        [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.layer_norm.weight                       [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): gnn_encoder.layers.5.layer_norm.bias                         [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.trg_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.src_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.gnn_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm.weight               [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm.bias                 [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm2.weight              [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm2.bias                [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm3.weight              [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.0.layer_norm3.bias                [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.trg_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.src_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.gnn_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,497 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm.weight               [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm.bias                 [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm2.weight              [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm2.bias                [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm3.weight              [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.1.layer_norm3.bias                [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.trg_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.src_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.gnn_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm.weight               [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm.bias                 [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm2.weight              [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm2.bias                [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm3.weight              [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.2.layer_norm3.bias                [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.trg_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.src_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,498 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.gnn_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm.weight               [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm.bias                 [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm2.weight              [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm2.bias                [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm3.weight              [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.3.layer_norm3.bias                [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.trg_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.src_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.gnn_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm.weight               [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm.bias                 [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm2.weight              [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm2.bias                [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm3.weight              [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.4.layer_norm3.bias                [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.trg_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,499 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.src_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.key_project.weight [512, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.key_project.bias [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.query_project.weight [512, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.query_project.bias [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.value_project.weight [512, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.value_project.bias [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.output_layer.weight [512, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.gnn_trg_attention.output_layer.bias [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.layer_norm.weight  [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.layer_norm.bias    [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.0.weight      [2048, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.0.bias        [2048]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.3.weight      [512, 2048]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.feed_forward.pwff.3.bias        [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm.weight               [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm.bias                 [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm2.weight              [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm2.bias                [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm3.weight              [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layers.5.layer_norm3.bias                [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layer_norm.weight                        [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): transformer_decoder.layer_norm.bias                          [512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): src_embed.lut.weight                                         [13367, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): code_learnable_embed.learn_lut.weight                        [400, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): position_embed.lut.weight                                    [13753, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): trg_embed.lut.weight                                         [6991, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): trg_learnable_embed.learn_lut.weight                         [50, 512]
+2023-03-08 19:50:33,500 - DEBUG - model - Trainable parameters(name): output_layer.weight                                          [6991, 512]
+2023-03-08 19:50:33,500 - INFO - model - The model is built.
+2023-03-08 19:50:33,501 - INFO - __main__ - ********************8 GPUs are used.********************
+2023-03-08 19:50:33,501 - INFO - __main__ - ********************4 num_workers are used.********************
+2023-03-08 19:50:34,487 - INFO - __main__ - Adam(lr=0.0001, weight_decay=0, betas=[0.9, 0.999], eps=1e-08)
+2023-03-08 19:50:34,487 - INFO - __main__ - Scheduler = StepLR
+2023-03-08 19:50:34,488 - INFO - __main__ - Train stats:
 	device: cuda
 	n_gpu: 8
 	batch_size: 32
-2023-03-08 13:45:32,929 - INFO - __main__ - Epoch 1
+2023-03-08 19:50:34,488 - INFO - __main__ - Epoch 1
+2023-03-08 19:50:35,549 - WARNING - __main__ - batch_loss = 5947.525390625
+2023-03-08 19:50:35,549 - WARNING - __main__ - normalized_batch_loss = 185.86016845703125
+2023-03-08 19:50:35,549 - WARNING - __main__ - ntokens = 660

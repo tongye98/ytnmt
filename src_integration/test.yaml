@@ -121,6 +121,7 @@ model:
         aggr: "mean"                    # mean, max, lstm
         model_dim: 512
         num_layers: 6
+        dropout: 0.2
         
     transformer_decoder:
         model_dim: 512
