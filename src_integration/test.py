@@ -159,5 +159,16 @@ def test3():
     mask = subsequence_mask & trg_mask
     print(mask)
 
+
+from torch_geometric.utils import to_dense_batch
+def test4():
+    x = torch.arange(18).view(6,3)
+    print("x={}".format(x))
+
+    batch = torch.tensor([0,0,1,2,2,2])
+    out, mask = to_dense_batch(x, batch, max_num_nodes=3)
+    print("out = {}".format(out))
+    print("mask = {}".format(mask))
+
 if __name__ == "__main__":
-    test3()
+    test4()

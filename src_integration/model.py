@@ -570,7 +570,8 @@ class TransformerDecoder(nn.Module):
         penultimate = None
         for layer in self.layers:
             penultimate = input
-            input, cross_attention_weight = layer(input, memory=encoder_output, src_mask=src_mask, trg_mask=trg_mask)
+            input, cross_attention_weight = layer(input, code_encoder_memory=encoder_output, 
+                                                  src_mask=src_mask, trg_mask=trg_mask)
         
         penultimate_representation = self.layers[-1].context_representation(penultimate, encoder_output, src_mask, trg_mask)
 
@@ -591,19 +592,20 @@ class GNNEncoder(nn.Module):
         self.layers = nn.ModuleList([GNNEncoderLayer(model_dim=model_dim, GNN=gnn_type, aggr=aggr)
                                       for _ in range(num_layers)])
     
-    def forward(self, input, node_batch, pad_idx, ast_max_size):
+    def forward(self, input, node_batch):
         """
         Input: 
             node_batch: {0,0, 1, ..., B-1} | indicate node in which graph.
         Return 
+            output: [batch, Nmax, node_dim]
+            mask: [batch, Nmax] bool
+            Nmax: max node number in a batch.
         """
         for layer in self.layers:
             input = layer(input)
         if node_batch is not None:
-            (output, mask) = to_dense_batch(input, batch=node_batch, fill_value=pad_idx, max_num_nodes=ast_max_size)
-            # output [batch, Nmax, dim]
-            # mask [batch, Nmax] bool
-        return output 
+            output, mask = to_dense_batch(input, batch=node_batch)
+        return output, mask
 
 class Model(nn.Module):
     """
@@ -679,15 +681,18 @@ class Model(nn.Module):
                 src_input_code_token:Tensor=None, 
                 src_input_ast_token:Tensor=None,
                 src_input_ast_position:Tensor=None,
+                node_batch: Tensor=None,
                 trg_input:Tensor=None,
-                src_mask:Tensor=None, trg_mask:Tensor=None,
-                trg_truth:Tensor=None):
+                trg_truth:Tensor=None,
+                src_mask:Tensor=None,
+                trg_mask:Tensor=None,):
         """
         Input:
             return_type: loss, encode_decode, encode.
             src_input_code_token: [batch_size, src_code_token_len]
             src_input_ast_token: [batch_size, src_ast_token_len]
             src_input_ast_position: [batch_size, src_ast_token_len]
+            node_batch: []
             trg_input: [batch_size, trg_len]
             trg_truth: [batch_size, trg_len]
             src_mask: [batch_size, 1, src_len] 0 means be ignored.
@@ -701,12 +706,12 @@ class Model(nn.Module):
             transformer_encoder_input = self.learnable_embed(embed_src_code_token)
             gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
 
-            transformer_encoder_output = self.transformer_encoder(transformer_encoder_input)
-            gnn_encoder_output = self.gnn_encoder(gnn_encoder_input)
+            transformer_encoder_output = self.transformer_encoder(transformer_encoder_input, src_mask)
+            gnn_encoder_output, node_mask = self.gnn_encoder(gnn_encoder_input, node_batch)
 
 
             transformer_decoder_output = self.transformer_decoder(transformer_encoder_output, 
-                                                    gnn_encoder_output, trg_input)
+                                        gnn_encoder_output, trg_input, src_mask, node_mask, trg_mask)
             # transformer_decoder_output [batch_size, trg_size, model_dim]
             
             logits = self.output_layer(transformer_decoder_output) 
