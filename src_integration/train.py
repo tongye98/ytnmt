@@ -320,7 +320,7 @@ class TrainManager(object):
         text_tokens_input = text_tokens[:, :-1]
         text_tokens_output = text_tokens[:, 1:]
         # FIXME why is text_tokens output to make the trget mask
-        trg_mask = (text_tokens_output != PAD_ID).unsqueeze(1) # trg_mask (batch_size, 1, trg_length)
+        trg_mask = (text_tokens_input != PAD_ID).unsqueeze(1) # trg_mask (batch, 1, trg_length)
         # trg_mask: normal is True, pad is False
         ntokens = (text_tokens_output != PAD_ID).data.sum().item()
 

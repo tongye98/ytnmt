@@ -151,7 +151,7 @@ class MultiHeadedAttention(nn.Module):
         key  [batch_size, seq_len, hidden_size]
         value[batch_size, seq_len, hidden_size]
         query[batch_size, seq_len, hidden_size]
-        mask [batch_size, 1/seq_len, seq_len] (pad position is false)
+        mask [batch_size, 1 or seq_len, seq_len] (pad position is false or zero)
 
         return 
             - output [batch_size, query_len, hidden_size]
@@ -191,7 +191,7 @@ class MultiHeadedAttention(nn.Module):
             scores_relative = scores_relative.permute(1, 2, 0, 3)
             scores = scores + scores_relative
 
-        # apply mask Note: add a dimension to mask, -> [batch_size, 1, 1, key_len]
+        # apply mask Note: add a dimension to mask -> [batch_size, 1, 1, key_len]
         if mask is not None:
             scores = scores.masked_fill(~mask.unsqueeze(1), float("-inf"))
         
@@ -215,7 +215,7 @@ class MultiHeadedAttention(nn.Module):
         output = self.output_layer(context)
 
         attention_output_weights = attention_weights.view(batch_size, self.head_count, query_len, key_len).sum(dim=1) / self.head_count
-        # [batch_size, query_len, key_len]
+
         return output, attention_output_weights
 
 class PositionwiseFeedForward(nn.Module):
@@ -690,8 +690,11 @@ class Model(nn.Module):
             src_input_ast_position: [batch_size, src_ast_token_len]
             trg_input: [batch_size, trg_len]
             trg_truth: [batch_size, trg_len]
+            src_mask: [batch_size, 1, src_len] 0 means be ignored.
+            trg_mask: [batch_size, 1, trg_len] 0 means be ignored.
         """
         if return_type == "loss":
+            # FIXME How to use src_mask and trg_mask.
             embed_src_code_token = self.src_embed(src_input_code_token)
             embed_src_ast_token = self.src_embed(src_input_ast_token)
 
