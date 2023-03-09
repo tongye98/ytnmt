@@ -171,4 +171,4 @@ def test4():
     print("mask = {}".format(mask))
 
 if __name__ == "__main__":
-    test4()
+    test3()

@@ -115,6 +115,70 @@ class XentLoss(nn.Module):
     #     return (f"{self.__class__.__name__}(criterion={self.criterion}, "
     #             f"smoothing={self.smoothing})")
 
+class Embeddings(nn.Module):
+    def __init__(self, embedding_dim:int=64,
+                 scale: bool=True, vocab_size:int=0,
+                 padding_index:int=1, freeze:bool=False) -> None:
+        """
+        scale: for transformer see "https://zhuanlan.zhihu.com/p/442509602"
+        """
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.scale = scale
+        self.vocab_size = vocab_size
+        self.lut = nn.Embedding(vocab_size, self.embedding_dim, padding_idx=padding_index)
+        if freeze:
+            freeze_params(self)
+
+    def forward(self, source: Tensor) -> Tensor:
+        """
+        Perform lookup for input(source) in the embedding table.
+        return the embedded representation for source.
+        """
+        if self.scale:
+            return self.lut(source) * math.sqrt(self.embedding_dim)
+        else:
+            return self.lut(source)
+
+    # def __repr__(self):
+    #     return (f"{self.__class__.__name__}("
+    #             f"embedding_dim={self.embedding_dim}, "
+    #             f"vocab_size={self.vocab_size})")
+    
+    def load_from_file(self, embed_path:Path, vocab=None) -> None:
+        """
+        Load pretrained embedding weights from text file.
+        - First line is expeceted to contain vocabulary size and dimension.
+        The dimension has to match the model's specified embedding size, the vocabulary size is used in logging only.
+        - Each line should contain word and embedding weights separated by spaces.
+        - The pretrained vocabulary items that are not part of the vocabulary will be ignored (not loaded from the file).
+        - The initialization of Vocabulary items that are not part of the pretrained vocabulary will be kept
+        - This function should be called after initialization!
+        Examples:
+            2 5
+            the -0.0230 -0.0264  0.0287  0.0171  0.1403
+            at -0.0395 -0.1286  0.0275  0.0254 -0.0932        
+        """
+        embed_dict: Dict[int,Tensor] = {}
+        with embed_path.open("r", encoding="utf-8",errors="ignore") as f_embed:
+            vocab_size, dimension = map(int, f_embed.readline().split())
+            assert self.embedding_dim == dimension, "Embedding dimension doesn't match."
+            for line in f_embed.readlines():
+                tokens = line.rstrip().split(" ")
+                if tokens[0] in vocab.specials or not vocab.is_unk(tokens[0]):
+                    embed_dict[vocab.lookup(tokens[0])] = torch.FloatTensor([float(t) for t in tokens[1:]])
+            
+            logging.info("Loaded %d of %d (%%) tokens in the pre-trained file.",
+            len(embed_dict), vocab_size, len(embed_dict)/vocab_size)
+
+            for idx, weights in embed_dict.items():
+                if idx < self.vocab_size:
+                    assert self.embedding_dim == len(weights)
+                    self.lut.weight.data[idx] == weights
+            
+            logging.info("Cover %d of %d (%%) tokens in the Original Vocabulary.",
+            len(embed_dict), len(vocab), len(embed_dict)/len(vocab))
+
 class MultiHeadedAttention(nn.Module):
     """
     Multi-Head Attention module from 'Attention is all you need'.
@@ -191,7 +255,7 @@ class MultiHeadedAttention(nn.Module):
             scores_relative = scores_relative.permute(1, 2, 0, 3)
             scores = scores + scores_relative
 
-        # apply mask Note: add a dimension to mask -> [batch_size, 1, 1, key_len]
+        # apply mask Note: add a dimension to mask -> [batch_size, 1, 1 or len , key_len]
         if mask is not None:
             scores = scores.masked_fill(~mask.unsqueeze(1), float("-inf"))
         
@@ -312,6 +376,39 @@ class TransformerEncoderLayer(nn.Module):
         output = self.feed_forward(feedforward_input)
         return output
 
+class GNNEncoderLayer(nn.Module):
+    """
+    Classical GNN model encoder layer.
+    """
+    def __init__(self, model_dim=512, GNN=None, aggr=None) -> None:
+        super().__init__()
+
+        assert GNN in {"SAGEConv", "GCNConv", "GATConv"}
+        self.gnn = None 
+        if GNN == "SAGEConv":
+            self.gnn = SAGEConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
+        elif GNN == "GCNConv":
+            self.gnn = GCNConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
+        elif GNN == "GATConv":
+            self.gnn = GATConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
+        
+        self.relu = nn.ReLU()
+
+        self.layer_norm = nn.LayerNorm(model_dim)
+    
+    def forward(self, node_feature, edge_index):
+        """
+        Input:
+            node_emb [batch, node_emb_dim] / node feature tensor
+            edge_index: Adj [2, edge_num] 
+        Return: 
+            node_encode [batch, node_num, node_dim]
+        """
+        node_enc_ = self.gnn(x=node_feature, edge_index=edge_index)
+        node_enc_ = self.relu(node_enc_)
+        node_encode = self.layer_norm(node_feature + node_enc_)
+        return node_encode
+
 class TransformerDecoderLayer(nn.Module):
     """
     Classical transformer Decoder Layer
@@ -367,12 +464,12 @@ class TransformerDecoderLayer(nn.Module):
 
         cross_residual = src_trg_attention_input
         if self.layer_norm_position == 'pre':
-            src_trg_attention_input = self.layer_norm2(src_trg_attention_input)
+            src_trg_attention_input = self.layer_norm3(src_trg_attention_input)
         cross_attention_output, cross_attention_weight = self.src_trg_attention(code_encoder_memory, code_encoder_memory, src_trg_attention_input,mask=src_mask)
         feedforward_input = self.dropout(cross_attention_output) + cross_residual
 
         if self.layer_norm_position == 'post':
-            feedforward_input = self.layer_norm2(feedforward_input)
+            feedforward_input = self.layer_norm3(feedforward_input)
 
         output = self.feed_forward(feedforward_input)
         return output, cross_attention_weight
@@ -402,103 +499,6 @@ class TransformerDecoderLayer(nn.Module):
             
         representation = self.feed_forward.layer_norm(feedforward_input)
         return representation
-
-class GNNEncoderLayer(nn.Module):
-    """
-    Classical GNN model encoder layer.
-    """
-    def __init__(self, model_dim=512, GNN=None, aggr=None) -> None:
-        super().__init__()
-
-        assert GNN in {"SAGEConv", "GCNConv", "GATConv"}
-        self.gnn = None 
-        if GNN == "SAGEConv":
-            self.gnn = SAGEConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
-        elif GNN == "GCNConv":
-            self.gnn = GCNConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
-        elif GNN == "GATConv":
-            self.gnn = GATConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
-        
-        self.relu = nn.ReLU()
-
-        self.layer_norm = nn.LayerNorm(model_dim)
-    
-    def forward(self, node_feature, edge_index):
-        """
-        Input:
-            node_emb [batch, node_emb_dim] / node feature tensor
-            edge_index: Adj [2, edge_num] 
-        Return: 
-            node_encode [batch, node_num, node_dim]
-        """
-        node_enc_ = self.gnn(x=node_feature, edge_index=edge_index)
-        node_enc_ = self.relu(node_enc_)
-        node_encode = self.layer_norm(node_feature + node_enc_)
-        return node_encode
-    
-class Embeddings(nn.Module):
-    def __init__(self, embedding_dim:int=64,
-                 scale: bool=True, vocab_size:int=0,
-                 padding_index:int=1, freeze:bool=False) -> None:
-        """
-        scale: for transformer see "https://zhuanlan.zhihu.com/p/442509602"
-        """
-        super().__init__()
-        self.embedding_dim = embedding_dim
-        self.scale = scale
-        self.vocab_size = vocab_size
-        self.lut = nn.Embedding(vocab_size, self.embedding_dim, padding_idx=padding_index)
-        if freeze:
-            freeze_params(self)
-
-    def forward(self, source: Tensor) -> Tensor:
-        """
-        Perform lookup for input(source) in the embedding table.
-        return the embedded representation for source.
-        """
-        if self.scale:
-            return self.lut(source) * math.sqrt(self.embedding_dim)
-        else:
-            return self.lut(source)
-
-    # def __repr__(self):
-    #     return (f"{self.__class__.__name__}("
-    #             f"embedding_dim={self.embedding_dim}, "
-    #             f"vocab_size={self.vocab_size})")
-    
-    def load_from_file(self, embed_path:Path, vocab=None) -> None:
-        """
-        Load pretrained embedding weights from text file.
-        - First line is expeceted to contain vocabulary size and dimension.
-        The dimension has to match the model's specified embedding size, the vocabulary size is used in logging only.
-        - Each line should contain word and embedding weights separated by spaces.
-        - The pretrained vocabulary items that are not part of the vocabulary will be ignored (not loaded from the file).
-        - The initialization of Vocabulary items that are not part of the pretrained vocabulary will be kept
-        - This function should be called after initialization!
-        Examples:
-            2 5
-            the -0.0230 -0.0264  0.0287  0.0171  0.1403
-            at -0.0395 -0.1286  0.0275  0.0254 -0.0932        
-        """
-        embed_dict: Dict[int,Tensor] = {}
-        with embed_path.open("r", encoding="utf-8",errors="ignore") as f_embed:
-            vocab_size, dimension = map(int, f_embed.readline().split())
-            assert self.embedding_dim == dimension, "Embedding dimension doesn't match."
-            for line in f_embed.readlines():
-                tokens = line.rstrip().split(" ")
-                if tokens[0] in vocab.specials or not vocab.is_unk(tokens[0]):
-                    embed_dict[vocab.lookup(tokens[0])] = torch.FloatTensor([float(t) for t in tokens[1:]])
-            
-            logging.info("Loaded %d of %d (%%) tokens in the pre-trained file.",
-            len(embed_dict), vocab_size, len(embed_dict)/vocab_size)
-
-            for idx, weights in embed_dict.items():
-                if idx < self.vocab_size:
-                    assert self.embedding_dim == len(weights)
-                    self.lut.weight.data[idx] == weights
-            
-            logging.info("Cover %d of %d (%%) tokens in the Original Vocabulary.",
-            len(embed_dict), len(vocab), len(embed_dict)/len(vocab))
 
 class TransformerEncoder(nn.Module):
     """
@@ -539,6 +539,30 @@ class TransformerEncoder(nn.Module):
     #     return (f"{self.__class__.__name__}(num_layers={len(self.layers)}, "
     #             f"head_count={self.head_count}, " 
     #             f"layer_norm_position={self.layer_norm_position})")
+
+class GNNEncoder(nn.Module):
+    def __init__(self, gnn_type, aggr, model_dim, num_layers) -> None:
+        super().__init__()
+        self.layers = nn.ModuleList([GNNEncoderLayer(model_dim=model_dim, GNN=gnn_type, aggr=aggr)
+                                      for _ in range(num_layers)])
+    
+    def forward(self, node_feature, edge_index, node_batch):
+        """
+        Input: 
+            # FIXME
+            node_feature: [batch, ]
+            edge_index: [2, edge_number]
+            node_batch: {0,0, 1, ..., B-1} | indicate node in which graph.
+        Return 
+            output: [batch, Nmax, node_dim]
+            mask: [batch, Nmax] bool
+            Nmax: max node number in a batch.
+        """
+        for layer in self.layers:
+            node_feature = layer(node_feature, edge_index)
+        if node_batch is not None:
+            output, mask = to_dense_batch(node_feature, batch=node_batch)
+        return output, mask
 
 class TransformerDecoder(nn.Module):
     """
@@ -603,30 +627,6 @@ class TransformerDecoder(nn.Module):
     #     return (f"{self.__class__.__name__}(num_layers={len(self.layers)}, "
     #             f"head_count={self.head_count}, " 
     #             f"layer_norm_position={self.layer_norm_position})")
-    
-class GNNEncoder(nn.Module):
-    def __init__(self, gnn_type, aggr, model_dim, num_layers) -> None:
-        super().__init__()
-        self.layers = nn.ModuleList([GNNEncoderLayer(model_dim=model_dim, GNN=gnn_type, aggr=aggr)
-                                      for _ in range(num_layers)])
-    
-    def forward(self, node_feature, edge_index, node_batch):
-        """
-        Input: 
-            # FIXME
-            node_feature: [batch, ]
-            edge_index: [2, edge_number]
-            node_batch: {0,0, 1, ..., B-1} | indicate node in which graph.
-        Return 
-            output: [batch, Nmax, node_dim]
-            mask: [batch, Nmax] bool
-            Nmax: max node number in a batch.
-        """
-        for layer in self.layers:
-            node_feature = layer(node_feature, edge_index)
-        if node_batch is not None:
-            output, mask = to_dense_batch(node_feature, batch=node_batch)
-        return output, mask
 
 class Model(nn.Module):
     """
