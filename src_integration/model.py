@@ -393,7 +393,7 @@ class GNNEncoderLayer(nn.Module):
             self.gnn = GATConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
         
         self.relu = nn.ReLU()
-
+        self.dropout= nn.Dropout(0.2)
         self.layer_norm = nn.LayerNorm(model_dim)
     
     def forward(self, node_feature, edge_index):
@@ -404,9 +404,11 @@ class GNNEncoderLayer(nn.Module):
         Return: 
             node_encode [batch, node_num, node_dim]
         """
+        residual = node_feature 
+        node_feature = self.layer_norm(node_feature)
         node_enc_ = self.gnn(x=node_feature, edge_index=edge_index)
         node_enc_ = self.relu(node_enc_)
-        node_encode = self.layer_norm(node_feature + node_enc_)
+        node_encode = self.dropout(node_enc_) + residual
         return node_encode
 
 class TransformerDecoderLayer(nn.Module):
@@ -545,6 +547,8 @@ class GNNEncoder(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList([GNNEncoderLayer(model_dim=model_dim, GNN=gnn_type, aggr=aggr)
                                       for _ in range(num_layers)])
+        
+        self.layernorm = nn.LayerNorm(model_dim)
     
     def forward(self, node_feature, edge_index, node_batch):
         """
@@ -560,8 +564,12 @@ class GNNEncoder(nn.Module):
         """
         for layer in self.layers:
             node_feature = layer(node_feature, edge_index)
+        
+        node_feature = self.layernorm(node_feature)
+
         if node_batch is not None:
             output, mask = to_dense_batch(node_feature, batch=node_batch)
+            
         return output, mask
 
 class TransformerDecoder(nn.Module):
@@ -730,10 +738,10 @@ class Model(nn.Module):
         if return_type == "loss":
             # FIXME How to use src_mask and trg_mask.
             embed_src_code_token = self.src_embed(src_input_code_token)
-            embed_src_ast_token = self.src_embed(src_input_ast_token)
-
             transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
             transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)
+
+            embed_src_ast_token = self.src_embed(src_input_ast_token)
             gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
             gnn_encoder_input = self.ast_node_emb_dropout(gnn_encoder_input)
 
