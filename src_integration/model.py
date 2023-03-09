@@ -569,7 +569,7 @@ class GNNEncoder(nn.Module):
 
         if node_batch is not None:
             output, mask = to_dense_batch(node_feature, batch=node_batch)
-            
+
         return output, mask
 
 class TransformerDecoder(nn.Module):
@@ -753,10 +753,8 @@ class Model(nn.Module):
             decoder_trg_input = self.text_emb_dropout(decoder_trg_input)
             transformer_decoder_output, _, _ = self.transformer_decoder(transformer_encoder_output, 
                                         gnn_encoder_output, decoder_trg_input, src_mask, node_mask, trg_mask)
-            # transformer_decoder_output [batch_size, trg_size, model_dim]
             
             logits = self.output_layer(transformer_decoder_output) 
-            #logits [batch_size, trg_size, trg_vocab_size]
 
             log_probs = F.log_softmax(logits, dim=-1)
 
@@ -773,9 +771,10 @@ class Model(nn.Module):
                 f"\tGNN_encoder={self.gnn_encoder},\n"
                 f"\tTransformer_decoder={self.transformer_decoder},\n"
                 f"\tsrc_embed={self.src_embed},\n"
-                f"\tlearnable_embed={self.learnable_embed},\n"  
+                f"\tcode_learnable_embed={self.code_learnable_embed},\n"  
                 f"\tposition_embed={self.position_embed},\n"  
                 f"\ttrg_embed={self.trg_embed},\n"
+                f"\ttext_learnable_embed={self.trg_learnable_embed},\n"
                 f"\tloss_function={self.loss_function})")
 
     def log_parameters_list(self) -> None:
