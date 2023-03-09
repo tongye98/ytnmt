@@ -553,10 +553,10 @@ class GNNEncoder(nn.Module):
     def forward(self, node_feature, edge_index, node_batch):
         """
         Input: 
-            # FIXME
-            node_feature: [batch, ]
+            node_feature: [node_number, node_dim]
             edge_index: [2, edge_number]
-            node_batch: {0,0, 1, ..., B-1} | indicate node in which graph.
+            node_batch: {0,0, 1, ..., B-1} | indicate node in which graph. 
+                        B: the batch_size or graphs.
         Return 
             output: [batch, Nmax, node_dim]
             mask: [batch, Nmax] bool
@@ -736,7 +736,6 @@ class Model(nn.Module):
             trg_mask: [batch_size, 1, trg_len] 0 means be ignored.
         """
         if return_type == "loss":
-            # FIXME How to use src_mask and trg_mask.
             embed_src_code_token = self.src_embed(src_input_code_token)
             transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
             transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)

@@ -33,7 +33,7 @@ data:
         filter_or_truncate: "truncate"
 
 training:
-    model_dir: "test_dir"
+    model_dir: "test_dir2"
     overwrite: True
 
     logging_frequence: 100
