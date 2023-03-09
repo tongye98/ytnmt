@@ -239,7 +239,7 @@ class TrainManager(object):
 
                     # clip gradients (in-place)
                     if self.clip_grad_function is not None:
-                        self.clip_grad_fun(parameters=self.model.parameters())
+                        self.clip_grad_function(parameters=self.model.parameters())
                     
                     # make gradient step
                     self.optimizer.step()
@@ -336,12 +336,12 @@ class TrainManager(object):
                                 trg_input=text_tokens_input, trg_truth=text_tokens_output,
                                 src_mask=src_mask, trg_mask=trg_mask) 
         
-        logger.warning("batch_loss = {}".format(batch_loss))
+        # logger.warning("batch_loss = {}".format(batch_loss))
         normalized_batch_loss = batch_loss / self.batch_size
         # normalized_batch_loss is the average-sentence level loss.
-        logger.warning("normalized_batch_loss = {}".format(normalized_batch_loss))
-        logger.warning("ntokens = {}".format(ntokens))
-        assert False
+        # logger.warning("normalized_batch_loss = {}".format(normalized_batch_loss))
+        # logger.warning("ntokens = {}".format(ntokens))
+        # assert False
         return normalized_batch_loss, ntokens
 
     def unittest_batch_data(self, code_tokens, ast_nodes, text_tokens, ast_positions, 
