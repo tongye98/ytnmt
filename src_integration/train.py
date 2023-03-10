@@ -2,6 +2,7 @@ import torch
 import yaml
 import logging 
 from typing import Union, Dict, Generator, List
+from tqdm import tqdm 
 from pathlib import Path 
 import random 
 import os 
@@ -13,6 +14,7 @@ import time
 from functools import partial 
 from model import build_model, Model
 from data import load_data, OurDataset, make_data_loader, OurData, PAD_ID
+from test import search 
 from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
@@ -67,6 +69,7 @@ class TrainManager(object):
     Manage the whole training loop and validation.
     """
     def __init__(self, model:Model, cfg:dict):
+        self.cfg = cfg
         # File system 
         train_cfg = cfg["training"]
         self.model_dir = Path(train_cfg["model_dir"])
@@ -245,7 +248,8 @@ class TrainManager(object):
                     self.optimizer.step()
 
                     # accumulate loss
-                    epoch_loss += normalized_batch_loss.item()
+                    # FIXME epoch loss += normalized_batch_loss.item() * self.batch_size
+                    epoch_loss += normalized_batch_loss.item() 
 
                     # increment token counter
                     self.train_stats.total_tokens += ntokens
@@ -277,7 +281,7 @@ class TrainManager(object):
                     
                     # decay learning_rate(lr)
                     if self.scheduler_step_at == "step":
-                        self.scheduler.step(self.train_stats.steps)
+                        self.scheduler.step()
 
                 logger.info("Epoch %3d: total training loss %.2f", epoch_no + 1, epoch_loss)
 
@@ -336,12 +340,8 @@ class TrainManager(object):
                                 trg_input=text_tokens_input, trg_truth=text_tokens_output,
                                 src_mask=src_mask, trg_mask=trg_mask) 
         
-        # logger.warning("batch_loss = {}".format(batch_loss))
         normalized_batch_loss = batch_loss / self.batch_size
         # normalized_batch_loss is the average-sentence level loss.
-        # logger.warning("normalized_batch_loss = {}".format(normalized_batch_loss))
-        # logger.warning("ntokens = {}".format(ntokens))
-        # assert False
         return normalized_batch_loss, ntokens
 
     def unittest_batch_data(self, code_tokens, ast_nodes, text_tokens, ast_positions, 
@@ -366,14 +366,29 @@ class TrainManager(object):
         logger.warning("trg_mask = {}".format(trg_mask))
         logger.warning("ntokens = {}".format(ntokens))
         
-
-    def validate(self, valid_data: OurDataset):
+    def validate(self, valid_dataset: OurDataset):
         """
         Validate on the valid dataset.
         return the validate time.
         """
         validate_start_time = time.time()
         # FIXME
+        self.valid_loader = make_data_loader(dataset=valid_dataset, sampler_seed=self.seed, shuffle=False,
+                    batch_size=self.batch_size, num_workers=self.num_workers, mode="valid")
+        
+        self.model.eval()
+
+        for batch_data in tqdm(self.valid_loader):
+            batch_data.to(self.device)
+            with torch.no_grad():
+                normalized_batch_loss, ntokens = self.train_step(batch_data)
+            
+            output, hyp_scores, attention_scores = search(batch_data, self.model, self.cfg)
+
+
+
+
+
         # predict()
         validate_duration_time = time.time() - validate_start_time
 
@@ -389,7 +404,7 @@ class TrainManager(object):
 
         # set scheduler
         if self.scheduler_step_at == "validation":
-            self.scheduler.step(metrics=ckpt_score)
+            self.scheduler.step()
 
         # update new best
         new_best = self.train_stats.is_best(ckpt_score)
@@ -415,8 +430,7 @@ class TrainManager(object):
         # TODO 
 
         return validate_duration_time
-
-    
+  
     def add_validation_report(self, valid_scores:dict, new_best:bool):
         """
         Append a one-line report to validation logging file.
