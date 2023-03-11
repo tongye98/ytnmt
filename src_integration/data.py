@@ -141,8 +141,11 @@ def read_data_from_file(path:Path):
         raw_data = json.load(f)
     
     data = []
+    dataset_truth = []
     for item in tqdm(raw_data, desc="Extract data from file..."):
         code_tokens = item['code'].split()
+        text_truth = item["text"]
+        dataset_truth.append(text_truth)
         text_tokens = item['text'].split()
         ast_nodes = list(eval(item['ast']['nodes']))
         ast_positions = list(eval(item['ast']['poses']))
@@ -160,7 +163,8 @@ def read_data_from_file(path:Path):
             "ast_positions": ast_positions,
         }
         data.append(data_item)
-    return data
+
+    return data, dataset_truth
 
 def log_vocab_info(code_vocab,text_vocab, position_vocab):
     """logging vocabulary information"""
@@ -269,25 +273,25 @@ def load_data(data_cfg: dict):
     assert train_data_path.is_file() and valid_data_path.is_file() and test_data_path.is_file(), \
     "train or valid or test path is not a file."
 
-    train_data = read_data_from_file(train_data_path)
-    valid_data = read_data_from_file(valid_data_path)
-    test_data = read_data_from_file(test_data_path)
+    train_data, train_data_truth = read_data_from_file(train_data_path)
+    valid_data, valid_data_truth = read_data_from_file(valid_data_path)
+    test_data, test_data_truth = read_data_from_file(test_data_path)
 
     code_vocab, text_vocab, position_vocab = build_vocabulary(data_cfg, [train_data, valid_data])
 
     vocab_info = {
-        "src_vocab": {"size": len(code_vocab), "pad_index": code_vocab.pad_index},
-        "position_vocab": {"size":len(position_vocab), "pad_index": position_vocab.pad_index},
-        "trg_vocab": {"size":len(text_vocab), "pad_index": position_vocab.pad_index}
+        "src_vocab": {"self":code_vocab ,"size": len(code_vocab), "pad_index": code_vocab.pad_index},
+        "position_vocab": {"self":position_vocab, "size":len(position_vocab), "pad_index": position_vocab.pad_index},
+        "trg_vocab": {"self":text_vocab, "size":len(text_vocab), "pad_index": position_vocab.pad_index}
     }
 
     train_data_id = token2id(train_data, code_vocab, text_vocab, position_vocab, data_cfg)
     valid_data_id = token2id(valid_data, code_vocab, text_vocab, position_vocab, data_cfg)
     test_data_id = token2id(test_data, code_vocab, text_vocab, position_vocab, data_cfg)
 
-    train_dataset = OurDataset(train_data_id)
-    valid_dataset = OurDataset(valid_data_id)
-    test_dataset = OurDataset(test_data_id)
+    train_dataset = OurDataset(train_data_id, train_data_truth)
+    valid_dataset = OurDataset(valid_data_id, valid_data_truth)
+    test_dataset = OurDataset(test_data_id, test_data_truth)
 
 
     return train_dataset, valid_dataset, test_dataset, vocab_info
@@ -319,9 +323,10 @@ def truc_pad(data, token_max_len):
     return pad_data
 
 class OurDataset(Dataset):
-    def __init__(self, data_id) -> None:
+    def __init__(self, data_id, data_truth) -> None:
         super().__init__()
         self.data_id = data_id  # data_id [dict, dict, ...]
+        self.target_truth = data_truth
     
     def __getitem__(self, index):
         data_item = self.data_id[index]

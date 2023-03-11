@@ -14,7 +14,7 @@ import time
 from functools import partial 
 from model import build_model, Model
 from data import load_data, OurDataset, make_data_loader, OurData, PAD_ID
-from test import search 
+from validate import search, eval_accuracies
 from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
@@ -206,7 +206,7 @@ class TrainManager(object):
         logger.info("Scheduler = %s", scheduler.__class__.__name__)
         return scheduler, scheduler_step_at
         
-    def train_and_validate(self, train_dataset:OurDataset, valid_dataset:OurDataset):
+    def train_and_validate(self, train_dataset:OurDataset, valid_dataset:OurDataset, vocab_info:Dict):
         """
         Train the model and validate it from time to time on the validation set.
         """
@@ -290,7 +290,7 @@ class TrainManager(object):
 
                 # validate on the entire dev dataset
                 if (epoch_no + 1) % self.valid_frequence == 0:
-                    valid_duration_time = self.validate(valid_dataset)
+                    valid_duration_time = self.validate(valid_dataset, vocab_info)
                     logger.info("Validation time = {}s.".format(valid_duration_time))
 
                 # check after a number of whole epoch.
@@ -366,7 +366,7 @@ class TrainManager(object):
         logger.warning("trg_mask = {}".format(trg_mask))
         logger.warning("ntokens = {}".format(ntokens))
         
-    def validate(self, valid_dataset: OurDataset):
+    def validate(self, valid_dataset: OurDataset, vocab_info:Dict):
         """
         Validate on the valid dataset.
         return the validate time.
@@ -378,29 +378,47 @@ class TrainManager(object):
         
         self.model.eval()
 
+        all_validate_outputs = []
+        all_validate_probability = []
+        all_validate_attention = []
+        all_validate_loss = 0
+        validate_score = {"loss":float("nan"), "ppl":float("nan")}
+
         for batch_data in tqdm(self.valid_loader):
             batch_data.to(self.device)
             with torch.no_grad():
                 normalized_batch_loss, ntokens = self.train_step(batch_data)
+                all_validate_loss += normalized_batch_loss * self.batch_size
             
-            output, hyp_scores, attention_scores = search(batch_data, self.model, self.cfg)
+            stacked_output, stacked_probability, stacked_attention = search(batch_data, self.model, self.cfg)
 
+            all_validate_outputs.extend(stacked_output)
+            all_validate_probability.extend(stacked_probability if stacked_probability is not None else [])
+            all_validate_attention.extend(stacked_attention if stacked_attention is not None else [])
+        
+        validate_score["loss"] = all_validate_loss / len(valid_dataset)
+        validate_score["ppl"] = math.exp(validate_score["loss"]) # FIXME
 
+        # all valid_dataset process
+        text_vocab = vocab_info["trg_vocab"]["self"]
+        model_generated = text_vocab.arrays_to_sentences(arrays=all_validate_outputs, cut_at_eos=True, skip_pad=True)
+        model_generated = [" ".join(output) for output in model_generated]
 
+        target_truth = valid_dataset.target_truth
 
-
-        # predict()
         validate_duration_time = time.time() - validate_start_time
 
+        bleu, rouge_l, meteor = eval_accuracies(model_generated, target_truth)
+        validate_score["bleu"] = bleu
+        validate_score["rouge_l"] = rouge_l
+        validate_score["meteor"] = meteor
+
         # write eval_metric and corresponding score to tensorboard
-        for eval_metric, score in valid_scores.items():
-            if eval_metric in ["loss", "ppl"]:
+        for eval_metric, score in validate_score.items():
                 self.tb_writer.add_scalar(tag=f"valid/{eval_metric}",scalar_value=score, global_step=self.train_stats.steps)
-            else: # FIXME what the difference of if and else
-                self.tb_writer.add_scalar(tag=f"Valid/{eval_metric}",scalar_value=score, global_step=self.train_stats.steps)
         
         # the most important metric
-        ckpt_score = valid_scores[self.early_stop_metric]
+        ckpt_score = validate_score[self.early_stop_metric]
 
         # set scheduler
         if self.scheduler_step_at == "validation":
@@ -419,12 +437,13 @@ class TrainManager(object):
             self.save_model_checkpoint(new_best, ckpt_score)
         
         # append to validation report
-        self.add_validation_report(valid_scores=valid_scores, new_best=new_best)
-        self.log_examples(valid_hypotheses, valid_references, data=valid_data)
+        self.add_validation_report(valid_scores=validate_score, new_best=new_best)
+        # FIXME 
+        # self.log_examples(model_generated, valid_references, data=valid_data)
 
         # store validation set outputs
         validate_output_path = Path(self.model_dir) / f"{self.train_stats.steps}.hyps"
-        write_validattion_output_to_file(validate_output_path, valid_hypotheses)
+        self.write_validation_output_to_file(validate_output_path, model_generated)
 
         # store attention plot for selected valid sentences
         # TODO 
@@ -606,6 +625,15 @@ class TrainManager(object):
         
         if self.device.type == "cuda":
             self.model.to(self.device)
+
+    def write_validation_output_to_file(path:Path, array: List[str]) -> None:
+        """
+        Write list of strings to file.
+        array: list of strings.
+        """
+        with path.open("w", encoding="utf-8") as fg:
+            for entry in array:
+                fg.write(f"{entry}\n")
 
 def train(cfg_file: str) -> None:
     """

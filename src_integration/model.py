@@ -721,7 +721,10 @@ class Model(nn.Module):
                 trg_input:Tensor=None,
                 trg_truth:Tensor=None,
                 src_mask:Tensor=None,
-                trg_mask:Tensor=None,):
+                node_mask:Tensor=None,
+                trg_mask:Tensor=None,
+                transformer_encoder_output:Tensor=None,
+                gnn_encoder_output:Tensor=None):
         """
         Input:
             return_type: loss, encode_decode, encode.
@@ -761,9 +764,29 @@ class Model(nn.Module):
             # NOTE batch loss = sum over all sentence of all tokens in the batch that are not pad!
             return batch_loss
 
-        elif return_type == "encode_decode":
-            pass 
-    
+        elif return_type == "encode":
+            embed_src_code_token = self.src_embed(src_input_code_token)
+            transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
+            transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)
+
+            embed_src_ast_token = self.src_embed(src_input_ast_position)
+            gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
+            gnn_encoder_input = self.ast_node_emb_dropout(gnn_encoder_input)
+
+            transformer_encoder_output = self.transformer_encoder(transformer_encoder_input, src_mask)
+            gnn_encoder_output, node_mask = self.gnn_encoder(gnn_encoder_input, edge_index, node_batch)
+            return transformer_encoder_output, src_mask, gnn_encoder_output, node_mask
+        
+        elif return_type == "decode":
+            embed_trg_input = self.trg_embed(trg_input)
+            decoder_trg_input = self.trg_learnable_embed(embed_trg_input)
+            decoder_trg_input = self.text_emb_dropout(decoder_trg_input)
+            transformer_decoder_output, _, cross_attention_weight = self.transformer_decoder(transformer_encoder_output, 
+                        gnn_encoder_output, decoder_trg_input, src_mask, node_mask, trg_mask)
+            
+            logits = self.output_layer(transformer_decoder_output)
+            return logits, None, cross_attention_weight
+       
     def __repr__(self):
         return (f"{self.__class__.__name__}(\n"
                 f"\tTransformer_encoder={self.transformer_encoder},\n"
