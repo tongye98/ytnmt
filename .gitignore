@@ -5,3 +5,4 @@ test/
 datas/
 datastore/
 builds/
+*.ckpt
