@@ -769,7 +769,7 @@ class Model(nn.Module):
             transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
             transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)
 
-            embed_src_ast_token = self.src_embed(src_input_ast_position)
+            embed_src_ast_token = self.src_embed(src_input_ast_token)
             gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
             gnn_encoder_input = self.ast_node_emb_dropout(gnn_encoder_input)
 
@@ -786,6 +786,9 @@ class Model(nn.Module):
             
             logits = self.output_layer(transformer_decoder_output)
             return logits, None, cross_attention_weight
+        
+        else:
+            return None 
        
     def __repr__(self):
         return (f"{self.__class__.__name__}(\n"

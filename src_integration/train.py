@@ -366,7 +366,7 @@ class TrainManager(object):
         logger.warning("trg_mask = {}".format(trg_mask))
         logger.warning("ntokens = {}".format(ntokens))
         
-    def validate(self, valid_dataset: OurDataset, vocab_info:Dict):
+    def validate(self, valid_dataset: OurDataset, vocab_info: Dict):
         """
         Validate on the valid dataset.
         return the validate time.
@@ -384,12 +384,12 @@ class TrainManager(object):
         all_validate_loss = 0
         validate_score = {"loss":float("nan"), "ppl":float("nan")}
 
-        for batch_data in tqdm(self.valid_loader):
+        for batch_data in tqdm(self.valid_loader, desc="Validating"):
             batch_data.to(self.device)
             with torch.no_grad():
                 normalized_batch_loss, ntokens = self.train_step(batch_data)
                 all_validate_loss += normalized_batch_loss * self.batch_size
-            
+
             stacked_output, stacked_probability, stacked_attention = search(batch_data, self.model, self.cfg)
 
             all_validate_outputs.extend(stacked_output)
@@ -397,7 +397,7 @@ class TrainManager(object):
             all_validate_attention.extend(stacked_attention if stacked_attention is not None else [])
         
         validate_score["loss"] = all_validate_loss / len(valid_dataset)
-        validate_score["ppl"] = math.exp(validate_score["loss"]) # FIXME
+        validate_score["ppl"] = math.exp(1) # FIXME how to compute ppl
 
         # all valid_dataset process
         text_vocab = vocab_info["trg_vocab"]["self"]
@@ -438,8 +438,7 @@ class TrainManager(object):
         
         # append to validation report
         self.add_validation_report(valid_scores=validate_score, new_best=new_best)
-        # FIXME 
-        # self.log_examples(model_generated, valid_references, data=valid_data)
+        self.log_examples(model_generated, target_truth)
 
         # store validation set outputs
         validate_output_path = Path(self.model_dir) / f"{self.train_stats.steps}.hyps"
@@ -463,21 +462,21 @@ class TrainManager(object):
             [f"LR: {current_lr:.8f}", "*" if new_best else ""])
             fg.write(f"{score_string}\n") 
     
-    def log_examples(self, hypotheses: List[str], references:List[str], dataset: OurDataset):
+    def log_examples(self, model_generated: List[str], target_truth:List[str]):
         """
         Log the first self.log_valid_senteces from given examples.
         hypotheses: decoded hypotheses (list of strings)
         references: decoded references (list of strings)
         """
-        for id in self.log_valid_sentences:
-            if id >= len(hypotheses):
+        for id in self.log_valid_samples:
+            if id >= len(model_generated):
                 continue
             logger.info("Example #%d", id)
 
             # detokenized text:
-            logger.info("\tSource: %s", dataset[id])
-            logger.info("\tReference: %s", references[id])
-            logger.info("\tHypothesis: %s", hypotheses[id])
+            # logger.info("\tSource: %s", dataset[id])
+            logger.info("\tReference: %s", target_truth[id])
+            logger.info("\tHypothesis: %s", model_generated[id])
     
     class TrainStatistics:
         def __init__(self, steps:int=0, is_min_lr:bool=False,
@@ -626,7 +625,7 @@ class TrainManager(object):
         if self.device.type == "cuda":
             self.model.to(self.device)
 
-    def write_validation_output_to_file(path:Path, array: List[str]) -> None:
+    def write_validation_output_to_file(self, path:Path, array: List[str]) -> None:
         """
         Write list of strings to file.
         array: list of strings.
@@ -659,7 +658,7 @@ def train(cfg_file: str) -> None:
     trainer = TrainManager(model=model, cfg=cfg)
 
     # train model
-    trainer.train_and_validate(train_dataset=train_dataset, valid_dataset=valid_dataset)
+    trainer.train_and_validate(train_dataset=train_dataset, valid_dataset=valid_dataset, vocab_info=vocab_info)
 
 if __name__ == "__main__":
     cfg_file = "test.yaml"

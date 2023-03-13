@@ -14,42 +14,40 @@ def search(batch_data:OurData, model:Model, cfg:dict):
     """
     Get outputs and attention scores for a given batch.
     """
-    with torch.no_grad():
-        code_tokens = batch_data.code_tokens
-        ast_nodes = batch_data.ast_nodes
-        ast_positions = batch_data.ast_positions
-        ast_edges = batch_data.ast_edges
-        node_batch = batch_data.batch
-        src_mask = (code_tokens != PAD_ID).unsqueeze(1)
-        # text_tokens = batch_data.text_tokens
-        # text_tokens_input = text_tokens[:, :-1]
-        # text_tokens_output = text_tokens[:, 1:]
-        # trg_mask = (text_tokens_input != PAD_ID).unsqueeze(1)
+    code_tokens = batch_data.code_tokens
+    ast_nodes = batch_data.ast_nodes
+    ast_positions = batch_data.ast_positions
+    ast_edges = batch_data.ast_edges
+    node_batch = batch_data.batch
+    # prt = batch_data.ptr
+    src_mask = (code_tokens != PAD_ID).unsqueeze(1) # src_mask (batch, 1, code_token_length)
+    # src_mask: normal is True; pad is False
 
+    with torch.no_grad():
         transformer_encoder_output, src_mask, gnn_encoder_output, node_mask = model(return_type="encode", 
                 src_input_code_token=code_tokens, src_input_ast_token=ast_nodes, src_input_ast_position=ast_positions,
                 node_batch=node_batch, edge_index=ast_edges, 
                 trg_input=None, trg_truth=None, src_mask=src_mask, trg_mask=None)
-         
-        beam_size = cfg["testing"].get("beam_size", 4)
-        beam_alpha = cfg["testing"].get("beam_alpha", -1)
-        max_output_length = cfg["testing"].get("max_output_length", 40)
-        min_output_length = cfg["testing"].get("min_output_length", 1)
-        n_best = cfg["testing"].get("n_best", 1)
-        return_attention = cfg["testing"].get("return_attention", True)
-        return_probability = cfg["testing"].get("return_probability", True) 
-        generate_unk = cfg["testing"].get("generate_unk", False)
-        # repetition_penalty = cfg["testing"].get("repetition_penalty", -1)
+        
+    beam_size = cfg["testing"].get("beam_size", 4)
+    beam_alpha = cfg["testing"].get("beam_alpha", -1)
+    max_output_length = cfg["testing"].get("max_output_length", 40)
+    min_output_length = cfg["testing"].get("min_output_length", 1)
+    n_best = cfg["testing"].get("n_best", 1)
+    return_attention = cfg["testing"].get("return_attention", True)
+    return_probability = cfg["testing"].get("return_probability", True) 
+    generate_unk = cfg["testing"].get("generate_unk", False)
+    # repetition_penalty = cfg["testing"].get("repetition_penalty", -1)
 
-        if beam_size < 2: 
-            stacked_output, stacked_probability, stacked_attention = greedy_search(model, transformer_encoder_output, src_mask,
-                                        gnn_encoder_output, node_mask, max_output_length, min_output_length, generate_unk, 
-                                        return_attention, return_probability)
-        else:
-            logger.info("*"*20 + "Beam search with beam size = {}".format(beam_size) + "*"*20)
-            stacked_output, stacked_probability, stacked_attention = beam_search()
+    if beam_size < 2: 
+        stacked_output, stacked_probability, stacked_attention = greedy_search(model, transformer_encoder_output, src_mask,
+                                    gnn_encoder_output, node_mask, max_output_length, min_output_length, generate_unk, 
+                                    return_attention, return_probability)
+    else:
+        logger.info("*"*20 + "Beam search with beam size = {}".format(beam_size) + "*"*20)
+        stacked_output, stacked_probability, stacked_attention = beam_search()
 
-        return stacked_output, stacked_probability, stacked_attention
+    return stacked_output, stacked_probability, stacked_attention
 
 def greedy_search(model, transformer_encoder_output, src_mask, gnn_encoder_output, node_mask,
                   max_output_length, min_output_length, generate_unk, return_attention, return_prob):
@@ -72,17 +70,14 @@ def greedy_search(model, transformer_encoder_output, src_mask, gnn_encoder_outpu
 
     # start with BOS-symbol for each sentence in the batch
     generated_tokens = transformer_encoder_output.new_full((batch_size,1), bos_index, dtype=torch.long, requires_grad=False)
-    logger.warning("generate_tokens device type = {}".format(generated_tokens.device))
     # generated_tokens [batch_size, 1] generated_tokens id
 
     # Placeholder for scores
     generated_scores = generated_tokens.new_zeros((batch_size,1), dtype=torch.float) if return_prob is True else None
-    logger.warning("generate_scores device type = {}".format(generated_scores.device))
     # generated_scores [batch_size, 1]
 
     # Placeholder for attentions
     generated_attention_weight = generated_tokens.new_zeros((batch_size, 1, src_length), dtype=torch.float) if return_attention else None
-    logger.warning("generate_attention_weight device type = {}".format(generated_attention_weight.device))
     # generated_attention_weight [batch_size, 1, src_len]
 
     # a subsequent mask is intersected with this in decoder forward pass
@@ -91,21 +86,22 @@ def greedy_search(model, transformer_encoder_output, src_mask, gnn_encoder_outpu
     finished = src_mask.new_zeros(batch_size).byte() # [batch_size], uint8
 
     for step in range(max_output_length):
-        logits, _, cross_attention_weight = model(return_type="decode", 
-            src_input_code_token=None, src_input_ast_token=None, src_input_ast_position=None,
-            node_batch=None, edge_index=None, trg_input=generated_tokens, 
-            trg_truth=None, src_mask=src_mask, node_mask=node_mask, trg_mask=trg_mask, 
-            transformer_encoder_output=transformer_encoder_output,
-            gnn_encoder_output=gnn_encoder_output)
-        # logits [batch_size, step+1, trg_vocab_size]
+        with torch.no_grad():
+            logits, _, cross_attention_weight = model(return_type="decode", 
+                src_input_code_token=None, src_input_ast_token=None, src_input_ast_position=None,
+                node_batch=None, edge_index=None, trg_input=generated_tokens, 
+                trg_truth=None, src_mask=src_mask, node_mask=node_mask, trg_mask=trg_mask, 
+                transformer_encoder_output=transformer_encoder_output,
+                gnn_encoder_output=gnn_encoder_output)
+            # logits [batch_size, step+1, trg_vocab_size]
 
-        output = logits[:, -1] 
-        # output [batch_size, trg_vocab_size]
-        if not generate_unk:
-            output[:, unk_index] = float("-inf")
-        if step < min_output_length:
-            output[:, eos_index] = float("-inf")
-        output = F.softmax(output, dim=-1)
+            output = logits[:, -1] 
+            # output [batch_size, trg_vocab_size]
+            if not generate_unk:
+                output[:, unk_index] = float("-inf")
+            if step < min_output_length:
+                output[:, eos_index] = float("-inf")
+            output = F.softmax(output, dim=-1)
 
         # take the most likely token
         prob, next_words = torch.max(output, dim=-1)
@@ -130,7 +126,6 @@ def greedy_search(model, transformer_encoder_output, src_mask, gnn_encoder_outpu
     stacked_output = generated_tokens[:, 1:].detach().cpu().numpy()
     stacked_probability = generated_scores[:, 1:].detach().cpu().numpy() if return_prob  else None
     stacked_attention = generated_attention_weight[:, 1:, :].detach().cpu().numpy() if return_attention else None
-
     return stacked_output, stacked_probability, stacked_attention
 
 def tile(x: Tensor, count: int, dim : int=0) -> Tensor:
@@ -353,11 +348,11 @@ def eval_accuracies(model_generated, target_truth):
     rouge_l, ind_rouge = rouge_calculator.compute_score(target_truth, generated)
 
     # Compute METEOR scores
-    meteor_calculator = Meteor()
-    meteor, _ = meteor_calculator.compute_score(target_truth, generated)
+    # meteor_calculator = Meteor()
+    # meteor, _ = meteor_calculator.compute_score(target_truth, generated)
 
 
-    return bleu * 100, rouge_l * 100, meteor * 100
+    return bleu * 100, rouge_l * 100, 0 * 100
 
 
 # Copyright 2017 Google Inc. All Rights Reserved.
