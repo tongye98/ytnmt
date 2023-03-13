@@ -106,7 +106,11 @@ class Vocabulary(object):
             sentence.append(token)
             if cut_at_eos and token == EOS_TOKEN:
                 break
-        return sentence
+            
+        if sentence[-1] == EOS_TOKEN:
+            return sentence[:-1]
+        else:
+            return sentence
 
     def arrays_to_sentences(self, arrays: np.ndarray, cut_at_eos: bool=True, skip_pad: bool=True) -> List[List[str]]:
         """

@@ -37,7 +37,7 @@ training:
     overwrite: True
 
     logging_frequence: 100
-    validation_frequence: 1 # after how many epochs
+    validation_frequence: 100 # after how many epochs
     log_valid_samples: [0,1,2]
 
     use_cuda: True
@@ -47,9 +47,9 @@ training:
     shuffle: True 
     max_updates: 10000000
     batch_size: 32
-    ramdom_seed: 980820
+    random_seed: 980820
 
-    load_model: False
+    load_model: "test_dir2/best.ckpt"
     reset_best_ckpt: False
     reset_scheduler: False
     reset_optimzer: False

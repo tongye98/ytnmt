@@ -26,12 +26,12 @@ def load_config(path: Union[Path,str]="test.yaml") -> Dict:
         cfg = yaml.safe_load(yamlfile)
     return cfg
 
-def make_logger(model_dir:Path):
+def make_logger(model_dir:Path, mode:str):
     logger = logging.getLogger("")
     logger.setLevel(level=logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
     
-    fh = logging.FileHandler(model_dir/"test.log")
+    fh = logging.FileHandler(model_dir/"{}.log".format(mode))
     fh.setLevel(level=logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -427,10 +427,14 @@ class TrainManager(object):
         # update new best
         new_best = self.train_stats.is_best(ckpt_score)
         if new_best:
+            logger.info("Horray! New best validation score [%s]!", self.early_stop_metric)
             self.train_stats.best_ckpt_score = ckpt_score
             self.train_stats.best_ckpt_step = self.train_stats.steps
-            logger.info("Horray! New best validation score [%s]!", self.early_stop_metric)
-
+        
+        metrics_string = "Bleu = {}, rouge_l = {}, meteor = {}".format(bleu, rouge_l, meteor)
+        logger.info("Evaluation result({}) {}, evaluation time = {:.2f}[sec]".format(
+                "Greedy Search", metrics_string))
+ 
         # save checkpoints
         is_better = self.train_stats.is_better(ckpt_score, self.ckpt_queue) if len(self.ckpt_queue) > 0 else True
         if is_better or self.num_ckpts_keep < 0:
@@ -593,7 +597,7 @@ class TrainManager(object):
         logger.info("Loading model from %s", path)
         assert path.is_file(), f"model checkpoint {path} not found!"
         model_checkpoint = torch.load(path, map_location=self.device)
-        logger.info("Load model from %s", path)
+        logger.info("Load model from %s done!", path)
 
         # restore model parameters
         self.model.load_state_dict(model_checkpoint["model_state"])
@@ -644,7 +648,7 @@ def train(cfg_file: str) -> None:
     overwrite = cfg["training"].get("overwrite", False)
     model_dir = make_model_dir(model_dir, overwrite) # model_dir: absolute path
 
-    make_logger(model_dir)
+    make_logger(model_dir, mode="train_validate")
 
     set_seed(seed=int(cfg["training"].get("random_seed", 820)))
 
