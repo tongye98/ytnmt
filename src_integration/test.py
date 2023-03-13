@@ -85,6 +85,7 @@ def test(cfg_file: str) -> None:
     # restore model and optimizer parameters
     model.load_state_dict(model_checkpoint["model_state"])
 
+    # model to GPU
     if device.type == "cuda":
         model.to(device)
     
