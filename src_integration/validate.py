@@ -123,9 +123,9 @@ def greedy_search(model, transformer_encoder_output, src_mask, gnn_encoder_outpu
 
     # Remove bos-symbol
     # FIXME why need to cpu
-    stacked_output = generated_tokens[:, 1:].detach().cpu().numpy()
-    stacked_probability = generated_scores[:, 1:].detach().cpu().numpy() if return_prob  else None
-    stacked_attention = generated_attention_weight[:, 1:, :].detach().cpu().numpy() if return_attention else None
+    stacked_output = generated_tokens[:, 1:].detach().cpu().long()
+    stacked_probability = generated_scores[:, 1:].detach().cpu().float() if return_prob  else None
+    stacked_attention = generated_attention_weight[:, 1:, :].detach().cpu().float() if return_attention else None
     return stacked_output, stacked_probability, stacked_attention
 
 def tile(x: Tensor, count: int, dim : int=0) -> Tensor:

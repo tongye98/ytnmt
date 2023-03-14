@@ -324,7 +324,7 @@ class TrainManager(object):
         text_tokens_input = text_tokens[:, :-1]
         text_tokens_output = text_tokens[:, 1:]
         # FIXME why is text_tokens output to make the trget mask
-        trg_mask = (text_tokens_input != PAD_ID).unsqueeze(1) # trg_mask (batch, 1, trg_length)
+        trg_mask = (text_tokens_output != PAD_ID).unsqueeze(1) # trg_mask (batch, 1, trg_length)
         # trg_mask: normal is True, pad is False
         ntokens = (text_tokens_output != PAD_ID).data.sum().item()
 
@@ -432,8 +432,7 @@ class TrainManager(object):
             self.train_stats.best_ckpt_step = self.train_stats.steps
         
         metrics_string = "Bleu = {}, rouge_l = {}, meteor = {}".format(bleu, rouge_l, meteor)
-        logger.info("Evaluation result({}) {}, evaluation time = {:.2f}[sec]".format(
-                "Greedy Search", metrics_string))
+        logger.info("Evaluation result({}) {}".format("Greedy Search", metrics_string))
  
         # save checkpoints
         is_better = self.train_stats.is_better(ckpt_score, self.ckpt_queue) if len(self.ckpt_queue) > 0 else True

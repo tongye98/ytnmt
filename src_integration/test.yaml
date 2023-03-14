@@ -1,7 +1,7 @@
 # relative
 data:
-    train_data_path: "../datas/codescribe_java/test_data.json"
-    valid_data_path: "../datas/codescribe_java/test_data.json"
+    train_data_path: "../datas/codescribe_java/train_data.json"
+    valid_data_path: "../datas/codescribe_java/valid_data.json"
     test_data_path: "../datas/codescribe_java/test_data.json"
     dataset_type: "plain"
     code:
@@ -33,23 +33,23 @@ data:
         filter_or_truncate: "truncate"
 
 training:
-    model_dir: "test_dir2"
+    model_dir: "test_dir4"
     overwrite: True
 
     logging_frequence: 100
-    validation_frequence: 100 # after how many epochs
+    validation_frequence: 200 # after how many epochs
     log_valid_samples: [0,1,2]
 
     use_cuda: True
     num_workers: 4
 
-    epochs: 100
+    epochs: 200
     shuffle: True 
     max_updates: 10000000
     batch_size: 32
     random_seed: 980820
 
-    load_model: "test_dir2/best.ckpt"
+    # load_model: "test_dir2/best.ckpt"
     reset_best_ckpt: False
     reset_scheduler: False
     reset_optimzer: False

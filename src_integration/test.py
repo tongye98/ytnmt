@@ -56,7 +56,7 @@ def test(cfg_file: str) -> None:
     """
     cfg = load_config(Path(cfg_file))
 
-    model_dir = cfg["training"].get("model_dir", None)
+    model_dir = Path(cfg["training"].get("model_dir", None))
     assert model_dir is not None
 
     make_logger(model_dir, mode="test")
@@ -76,7 +76,7 @@ def test(cfg_file: str) -> None:
     model = build_model(model_cfg=cfg["model"], vocab_info=vocab_info)
 
     # when checkpoint is not specified, take latest(best) from model_dir
-    ckpt_path = resolve_ckpt_path(ckpt_path, load_model, Path(model_dir))
+    ckpt_path = resolve_ckpt_path(None, load_model, Path(model_dir))
     logger.info("ckpt_path = {}".format(ckpt_path))
 
     # load model checkpoint 
@@ -91,14 +91,14 @@ def test(cfg_file: str) -> None:
     
     # Test 
     dataset_to_test = {"valid": valid_dataset, "test":test_dataset}
-    for dataset_name, dataset in dataset_to_test.item():
+    for dataset_name, dataset in dataset_to_test.items():
         if dataset_name == "valid":
             continue
         if dataset is not None: 
             logger.info("Starting testing on %s dataset...", dataset_name)
             test_start_time = time.time()
             test_loader = make_data_loader(dataset=dataset, sampler_seed=seed, shuffle=False,
-                            batch_size=batch_size, num_workers=num_workers, mode="test")
+                            batch_size=batch_size*4, num_workers=num_workers, mode="test")
             
             model.eval()
 
@@ -116,7 +116,7 @@ def test(cfg_file: str) -> None:
                 all_test_attention.extend(stacked_attention)
             
             text_vocab = vocab_info["trg_vocab"]["self"]
-            model_generated = text_vocab.arrays_to_sentence(arrays=all_test_outputs, cut_at_eos=True, skip_pad=True)
+            model_generated = text_vocab.arrays_to_sentences(arrays=all_test_outputs, cut_at_eos=True, skip_pad=True)
             model_generated = [" ".join(output) for output in model_generated]
 
             target_truth = dataset.target_truth
@@ -129,9 +129,9 @@ def test(cfg_file: str) -> None:
             eval_scores["meteor"] = meteor
 
             metrics_string = "Bleu={}, rouge_l={}, meteor={}".format(bleu, rouge_l, meteor)
-            logger.info("Evaluation result({}) {}, evaluation time = {:.2f}[sec]".format(
-                "Beam Search" if beam_size > 1 else "Greedy Search", metrics_string))
-            
+            logger.info("Evaluation result({}) {}, Test cost time = {:.2f}[sec]".format(
+                "Beam Search" if beam_size > 1 else "Greedy Search", metrics_string, test_duration_time))
+
             output_file_path = Path(model_dir) / "{}.test_out".format(dataset_name)
             write_model_generated_to_file(output_file_path, model_generated)
 
