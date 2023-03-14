@@ -2382,3 +2382,10 @@
 2023-03-14 20:39:30,512 - INFO - __main__ - Epoch  66, Step:  143500, Batch Loss:     4.086638, Lr: 0.000052, Tokens per sec:   2586
 2023-03-14 20:39:51,507 - INFO - __main__ - Epoch  66, Step:  143600, Batch Loss:     5.205621, Lr: 0.000052, Tokens per sec:   2504
 2023-03-14 20:40:11,503 - INFO - __main__ - Epoch  66, Step:  143700, Batch Loss:     2.863209, Lr: 0.000052, Tokens per sec:   2729
+2023-03-14 20:40:31,586 - INFO - __main__ - Epoch  66, Step:  143800, Batch Loss:     3.294371, Lr: 0.000052, Tokens per sec:   2645
+2023-03-14 20:40:34,486 - INFO - __main__ - Epoch  66: total training loss 7793.65
+2023-03-14 20:40:34,487 - INFO - __main__ - Epoch 67
+2023-03-14 20:40:52,127 - INFO - __main__ - Epoch  67, Step:  143900, Batch Loss:     3.838377, Lr: 0.000052, Tokens per sec:   2635
+2023-03-14 20:41:12,115 - INFO - __main__ - Epoch  67, Step:  144000, Batch Loss:     2.336699, Lr: 0.000052, Tokens per sec:   2743
+2023-03-14 20:41:32,165 - INFO - __main__ - Epoch  67, Step:  144100, Batch Loss:     3.560970, Lr: 0.000052, Tokens per sec:   2690
+2023-03-14 20:41:52,385 - INFO - __main__ - Epoch  67, Step:  144200, Batch Loss:     3.047633, Lr: 0.000052, Tokens per sec:   2630
