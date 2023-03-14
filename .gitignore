@@ -6,4 +6,3 @@ datas/
 datastore/
 builds/
 *.ckpt
-src_integration/test_dir*
