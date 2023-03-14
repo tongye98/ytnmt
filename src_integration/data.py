@@ -261,8 +261,6 @@ def build_vocabulary(data_cfg:dict, datasets):
     text_vocab = Vocabulary(text_unique_tokens)
     position_vocab = Vocabulary(position_unique_tokens)
 
-    position_vocab.to_file(Path("position"))
-
     log_vocab_info(code_vocab, text_vocab, position_vocab)
 
     return code_vocab, text_vocab, position_vocab
@@ -416,10 +414,10 @@ if __name__ == "__main__":
     cfg = load_config(Path(cfg_file))
     train_dataset, valid_dataset, test_dataset = load_data(data_cfg=cfg["data"])
 
-    # NOTE
     train_loader = DataLoader(dataset=train_dataset, batch_size=32, shuffle=False)
     batch_data = next(iter(train_loader))
 
+    # check batch_data
     logger.info(batch_data)
     logger.info("code_tokens = {}".format(batch_data.code_tokens))
     logger.info("ast_nodes = {}".format(batch_data.ast_nodes))
