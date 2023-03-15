@@ -173,9 +173,10 @@ def test4():
 
 from validate import eval_accuracies
 def test_result():
-    paper_result = "../datas/codescribe_java/paper_result.txt"
+    # paper_result = "../datas/codescribe_java/paper_result.txt"
+    our_result = "test_dir_gnn_no_residual/test.test_out_beam4"
     truth = "../datas/codescribe_java/test.nl"
-    with open(paper_result, 'r') as paper, open(truth, 'r') as gold:
+    with open(our_result, 'r') as paper, open(truth, 'r') as gold:
         fpaper = paper.read().splitlines()
         fgold = gold.read().splitlines()
         bleu, rouge_l, meteor = eval_accuracies(fpaper, fgold)
@@ -184,5 +185,12 @@ def test_result():
         print("meteor = {}".format(meteor))
     return None 
 
+
+def test5():
+    hidden_representation_path = "hidden_representation"
+    embeddings = np.load(hidden_representation_path, mmap_mode="r")
+    total_samples, dimension = embeddings.shape
+    print("total samples = {}, dimension = {}".format(total_samples, dimension))
+
 if __name__ == "__main__":
-    test_result()
+    test5()

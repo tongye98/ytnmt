@@ -10561,3 +10561,12 @@
 2023-03-15 15:58:18,927 - INFO - __main__ - Load model from /home/tongye2/ytnmt/src_integration/test_dir_gnn_no_residual/217905.ckpt.
 2023-03-15 15:58:19,103 - INFO - __main__ - Starting testing on valid dataset...
 2023-03-15 15:58:32,703 - WARNING - validate - here: stacked output len = 256
+2023-03-15 17:26:32,685 - INFO - root - Hello! This is Tong Ye's Transformer!
+2023-03-15 17:27:58,385 - INFO - data - average code tokens = 109.28999515442095
+2023-03-15 17:27:58,386 - INFO - data - average ast tokens = 188.85505342888476
+2023-03-15 17:27:58,386 - INFO - data - average text tokens = 15.993139680191783
+2023-03-15 17:27:58,386 - INFO - data - average position tokens = 188.85505342888476
+2023-03-15 17:27:58,386 - INFO - data - average ast edges = 375.7101068577695
+2023-03-15 17:28:14,687 - INFO - data - code vocab length = 26684
+2023-03-15 17:28:14,687 - INFO - data - text vocab length = 13207
+2023-03-15 17:28:14,687 - INFO - data - position vocab length = 20587

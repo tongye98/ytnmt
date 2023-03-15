@@ -417,6 +417,7 @@ if __name__ == "__main__":
     cfg = load_config(Path(cfg_file))
     train_dataset, valid_dataset, test_dataset = load_data(data_cfg=cfg["data"])
 
+    assert False
     train_loader = DataLoader(dataset=train_dataset, batch_size=32, shuffle=False)
     batch_data = next(iter(train_loader))
 

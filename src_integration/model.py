@@ -476,7 +476,8 @@ class TransformerDecoderLayer(nn.Module):
         output = self.feed_forward(feedforward_input)
         return output, cross_attention_weight
     
-    def context_representation(self, penultimate:Tensor, encoder_output:Tensor, src_mask:Tensor, trg_mask:Tensor) -> Tensor:
+    def context_representation(self, penultimate:Tensor, code_encoder_memory:Tensor, src_mask:Tensor,
+                               ast_encoder_memory:Tensor, node_mask:Tensor, trg_mask:Tensor) -> Tensor:
         """
         Get the hidden state for search purpose.
         The hidden state means the token semantic.
@@ -484,21 +485,30 @@ class TransformerDecoderLayer(nn.Module):
         residual = penultimate
         if self.layer_norm_position == 'pre':
             penultimate = self.layer_norm(penultimate)
-        self_attention_output, _ = self.trg_trg_attention(penultimate, penultimate, penultimate, trg_mask)
+        self_attention_output, _ = self.trg_trg_attention(penultimate,penultimate,penultimate, mask=trg_mask)
         cross_attention_input = self.dropout(self_attention_output) + residual
 
         if self.layer_norm_position == 'post':
             cross_attention_input = self.layer_norm(cross_attention_input)
         
         cross_residual = cross_attention_input
-        if self.layer_norm_position == 'pre':
+        if self.layer_norm_position == "pre":
             cross_attention_input = self.layer_norm2(cross_attention_input)
-        cross_attention_output, cross_attention_weight = self.src_trg_attention(encoder_output, encoder_output, cross_attention_input, src_mask)
+        cross_attention_output, cross_attention_weight = self.gnn_trg_attention(ast_encoder_memory, ast_encoder_memory,
+                                                                                cross_attention_input, mask=node_mask)
+        src_trg_attention_input = self.dropout(cross_attention_output) + cross_residual
+        if self.layer_norm_position == 'post':
+            src_trg_attention_input = self.layer_norm2(src_trg_attention_input)
+
+        cross_residual = src_trg_attention_input
+        if self.layer_norm_position == 'pre':
+            src_trg_attention_input = self.layer_norm3(src_trg_attention_input)
+        cross_attention_output, cross_attention_weight = self.src_trg_attention(code_encoder_memory, code_encoder_memory, src_trg_attention_input,mask=src_mask)
         feedforward_input = self.dropout(cross_attention_output) + cross_residual
 
-        if self.layer_norm_position == "post":
-            feedforward_input = self.layer_norm2(feedforward_input)
-            
+        if self.layer_norm_position == 'post':
+            feedforward_input = self.layer_norm3(feedforward_input)
+
         representation = self.feed_forward.layer_norm(feedforward_input)
         return representation
 
@@ -623,7 +633,8 @@ class TransformerDecoder(nn.Module):
             trg_input, cross_attention_weight = layer(trg_input, code_encoder_memory=transformer_encoder_output, 
                 ast_encoder_memory=gnn_encoder_output, src_mask=src_mask, node_mask=node_mask, trg_mask=trg_mask)
         
-        penultimate_representation = self.layers[-1].context_representation(penultimate, transformer_encoder_output, src_mask, trg_mask)
+        penultimate_representation = self.layers[-1].context_representation(penultimate, transformer_encoder_output,
+                                                        src_mask, gnn_encoder_output, node_mask, trg_mask)
 
         if self.layer_norm is not None:
             trg_input = self.layer_norm(trg_input)
@@ -788,8 +799,29 @@ class Model(nn.Module):
             logits = self.output_layer(transformer_decoder_output)
             return logits, None, cross_attention_weight
         
+        elif return_type == "get_penultimate_representation":
+            embed_src_code_token = self.src_embed(src_input_code_token)
+            transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
+            transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)
+
+            embed_src_ast_token = self.src_embed(src_input_ast_token)
+            gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
+            gnn_encoder_input = self.ast_node_emb_dropout(gnn_encoder_input)
+
+            transformer_encoder_output = self.transformer_encoder(transformer_encoder_input, src_mask)
+            gnn_encoder_output, node_mask = self.gnn_encoder(gnn_encoder_input, edge_index, node_batch)
+
+            embed_trg_input = self.trg_embed(trg_input)
+            decoder_trg_input = self.trg_learnable_embed(embed_trg_input)
+            decoder_trg_input = self.text_emb_dropout(decoder_trg_input)
+            transformer_decoder_output, penultimate_representation, cross_attention_weight = self.transformer_decoder(
+                transformer_encoder_output, gnn_encoder_output, decoder_trg_input, src_mask, node_mask, trg_mask)
+            
+            return penultimate_representation
+        
         else:
             return None 
+            
        
     def __repr__(self):
         return (f"{self.__class__.__name__}(\n"

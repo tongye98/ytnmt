@@ -89,6 +89,13 @@ testing:
     repetition_penalty: -1       # >1, -1 means no repetition penalty. # no implemented
     # no_repeat_ngram_size: -1    # no implemented
 
+retrieval:
+    hidden_representation_path: "hidden_representation"
+    token_map_path: "token_map_path"
+    use_code_representation: True
+    index_path: "index"
+    index_type: "INNER" # INNER OR L2
+
 
 model:
     initializer: "xavier_uniform"     # xavier_uniform xavier_normal uniform normal
