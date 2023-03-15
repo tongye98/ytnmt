@@ -393,7 +393,7 @@ class GNNEncoderLayer(nn.Module):
             self.gnn = GATConv(in_channels=model_dim, out_channels=model_dim, aggr=aggr)
         
         self.relu = nn.ReLU()
-        self.dropout= nn.Dropout(0.2)
+        # self.dropout= nn.Dropout(0.2)
         self.layer_norm = nn.LayerNorm(model_dim)
     
     def forward(self, node_feature, edge_index):
@@ -408,8 +408,8 @@ class GNNEncoderLayer(nn.Module):
         node_feature = self.layer_norm(node_feature)
         node_enc_ = self.gnn(x=node_feature, edge_index=edge_index)
         node_enc_ = self.relu(node_enc_)
-        node_encode = self.dropout(node_enc_) + residual
-        return node_encode
+        # node_encode = node_enc_ + residual
+        return node_enc_
 
 class TransformerDecoderLayer(nn.Module):
     """
@@ -643,6 +643,7 @@ class Model(nn.Module):
     """
     def __init__(self, model_cfg:dict=None, vocab_info:dict=None) -> None:
         super().__init__()
+        self.vocab_info = vocab_info
         transformer_encoder_cfg = model_cfg["transformer_encoder"]
         self.transformer_encoder = TransformerEncoder(model_dim=transformer_encoder_cfg["model_dim"], 
                             ff_dim=transformer_encoder_cfg["ff_dim"],

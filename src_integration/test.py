@@ -2,6 +2,8 @@ import logging
 import torch 
 from typing import Dict, List
 import time 
+import pickle
+import codecs
 from pathlib import Path 
 from train import load_config, make_logger
 from data import load_data, make_data_loader
@@ -70,7 +72,13 @@ def test(cfg_file: str) -> None:
     beam_size = cfg["testing"].get("beam_size", 4)
 
     # load data
-    train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
+    # train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
+    with codecs.open("all_data_stored", 'rb') as f:
+        all_data = pickle.load(f)
+    train_dataset = all_data["traind_datasest"]
+    valid_dataset = all_data["valid_dataset"]
+    test_dataset = all_data["test_dataset"]
+    vocab_info = all_data["vocab_info"]
 
     # build model
     model = build_model(model_cfg=cfg["model"], vocab_info=vocab_info)
@@ -92,8 +100,8 @@ def test(cfg_file: str) -> None:
     # Test 
     dataset_to_test = {"valid": valid_dataset, "test":test_dataset}
     for dataset_name, dataset in dataset_to_test.items():
-        if dataset_name == "valid":
-            continue
+        # if dataset_name == "valid":
+        #     continue
         if dataset is not None: 
             logger.info("Starting testing on %s dataset...", dataset_name)
             test_start_time = time.time()
@@ -112,12 +120,14 @@ def test(cfg_file: str) -> None:
                 stacked_output, stacked_probability, stacked_attention = search(batch_data, model, cfg)
 
                 all_test_outputs.extend(stacked_output)
-                all_test_probability.extend(stacked_probability)
-                all_test_attention.extend(stacked_attention)
+                all_test_probability.extend(stacked_probability if stacked_probability is not None else [])
+                all_test_attention.extend(stacked_attention if stacked_attention is not None else [])
             
             text_vocab = vocab_info["trg_vocab"]["self"]
             model_generated = text_vocab.arrays_to_sentences(arrays=all_test_outputs, cut_at_eos=True, skip_pad=True)
             model_generated = [" ".join(output) for output in model_generated]
+            logger.warning("model generated length = {}".format(len(model_generated)))
+            logger.warning("target truth length = {}".format(len(target_truth)))
 
             target_truth = dataset.target_truth
 
@@ -132,7 +142,7 @@ def test(cfg_file: str) -> None:
             logger.info("Evaluation result({}) {}, Test cost time = {:.2f}[sec]".format(
                 "Beam Search" if beam_size > 1 else "Greedy Search", metrics_string, test_duration_time))
 
-            output_file_path = Path(model_dir) / "{}.test_out".format(dataset_name)
+            output_file_path = Path(model_dir) / "{}.test_out_beam4".format(dataset_name)
             write_model_generated_to_file(output_file_path, model_generated)
 
 

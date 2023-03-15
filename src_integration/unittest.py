@@ -170,5 +170,19 @@ def test4():
     print("out = {}".format(out))
     print("mask = {}".format(mask))
 
+
+from validate import eval_accuracies
+def test_result():
+    paper_result = "../datas/codescribe_java/paper_result.txt"
+    truth = "../datas/codescribe_java/test.nl"
+    with open(paper_result, 'r') as paper, open(truth, 'r') as gold:
+        fpaper = paper.read().splitlines()
+        fgold = gold.read().splitlines()
+        bleu, rouge_l, meteor = eval_accuracies(fpaper, fgold)
+        print("bleu = {}".format(bleu))
+        print("rouge-l = {}".format(rouge_l))
+        print("meteor = {}".format(meteor))
+    return None 
+
 if __name__ == "__main__":
-    test3()
+    test_result()

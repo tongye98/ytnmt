@@ -44,9 +44,11 @@ def search(batch_data:OurData, model:Model, cfg:dict):
                                     gnn_encoder_output, node_mask, max_output_length, min_output_length, generate_unk, 
                                     return_attention, return_probability)
     else:
-        logger.info("*"*20 + "Beam search with beam size = {}".format(beam_size) + "*"*20)
-        stacked_output, stacked_probability, stacked_attention = beam_search()
-
+        # logger.info("*"*20 + "Beam search with beam size = {}".format(beam_size) + "*"*20)
+        stacked_output, stacked_probability, stacked_attention = beam_search(model, transformer_encoder_output, src_mask, 
+                                    gnn_encoder_output, node_mask, max_output_length, min_output_length, beam_size, beam_alpha, n_best,
+                                    generate_unk, return_attention, return_probability)
+        
     return stacked_output, stacked_probability, stacked_attention
 
 def greedy_search(model, transformer_encoder_output, src_mask, gnn_encoder_output, node_mask,
@@ -142,8 +144,8 @@ def tile(x: Tensor, count: int, dim : int=0) -> Tensor:
     x = x.view(batch_size, -1).transpose(0,1).repeat(count, 1).transpose(0,1).contiguous().view(*out_size)
     return x
 
-def beam_search(model, encoder_output, src_mask, max_output_length, min_output_length, beam_size, beam_alpha,
-                n_best, generate_unk, return_attention, return_prob):
+def beam_search(model, transformer_encoder_output, src_mask, gnn_encoder_output, node_mask, max_output_length, min_output_length, beam_size, beam_alpha,
+                n_best, generate_unk, return_attention, return_probability):
     """
     Transformer Beam Search function.
     In each decoding step, find the k most likely partial hypotheses.
@@ -165,14 +167,17 @@ def beam_search(model, encoder_output, src_mask, max_output_length, min_output_l
     eos_index = EOS_ID
     batch_size = src_mask.size(0)
 
-    trg_vocab_size = model.trg_vocab_size
+    trg_vocab_size = model.vocab_info["trg_vocab"]["size"]
     trg_mask = None 
-    device = encoder_output.device
+    device = transformer_encoder_output.device
 
-    encoder_output = tile(encoder_output.contiguous(), beam_size, dim=0)
+    transformer_encoder_output = tile(transformer_encoder_output.contiguous(), beam_size, dim=0)
     # encoder_output [batch_size*beam_size, src_len, model_dim] i.e. [a,a,a,b,b,b]
     src_mask = tile(src_mask, beam_size, dim=0)
     # src_mask [batch_size*beam_size, 1, src_len]
+    
+    gnn_encoder_output = tile(gnn_encoder_output.contiguous(), beam_size, dim=0)
+    node_mask = tile(node_mask, beam_size, dim=0)
 
     trg_mask = src_mask.new_ones((1,1,1))
 
@@ -201,15 +206,15 @@ def beam_search(model, encoder_output, src_mask, max_output_length, min_output_l
         # feed the complete predicted sentences so far.
         decoder_input = alive_sentences
         with torch.no_grad():
-            output, penultimate_representation, cross_attention_weight = model(return_type="decode", trg_input=decoder_input, 
-                                                            encoder_output=encoder_output, src_mask=src_mask, trg_mask=trg_mask)
-            output = model.output_layer(output)
-            # output  [batch_size*beam_size, step+1, vocab_size]
-            # penultimate_representation [batch_size*beam_size, step+1, model_dim]
-            # cross_attention_weight  [batch_size*beam_size, step+1, src_len]
+            logits, _, cross_attention_weight = model(return_type="decode", 
+                                src_input_code_token=None, src_input_ast_token=None, src_input_ast_position=None,
+                                node_batch=None, edge_index=None, trg_input=decoder_input,
+                                trg_truth=None, src_mask=src_mask, node_mask=node_mask, trg_mask=trg_mask,
+                                transformer_encoder_output=transformer_encoder_output,
+                                gnn_encoder_output=gnn_encoder_output)
 
             # for the transformer we made predictions for all time steps up to this point, so we only want to know about the last time step.
-            output = output[:, -1] # output [batch_size*beam_size, vocab_size]
+            output = logits[:, -1] # output [batch_size*beam_size, vocab_size]
 
         # compute log probability distribution over trg vocab
         log_probs = F.log_softmax(output, dim=-1)
@@ -315,8 +320,10 @@ def beam_search(model, encoder_output, src_mask, max_output_length, min_output_l
 
         # Reorder indices, outputs and masks
         select_indices = batch_index.view(-1)
-        encoder_output = encoder_output.index_select(0, select_indices)
+        transformer_encoder_output = transformer_encoder_output.index_select(0, select_indices)
         src_mask = src_mask.index_select(0, select_indices)
+        gnn_encoder_output = gnn_encoder_output.index_select(0, select_indices)
+        node_mask = node_mask.index_select(0, select_indices)
 
     def pad_and_stack_hyps(hyps: List[np.ndarray]):
         filled = (np.ones((len(hyps), max([h.shape[0]  for h in hyps])), dtype=int) * pad_index)
@@ -329,7 +336,7 @@ def beam_search(model, encoder_output, src_mask, max_output_length, min_output_l
     # final_outputs [batch_size*n_best, hyp_len]
     predictions_list = [u.cpu().numpy() for r in results["predictions"] for u in r]
     final_outputs = pad_and_stack_hyps(predictions_list)
-    scores = (np.array([[u.item()] for r in results['scores'] for u in r]) if return_prob else None)
+    scores = (np.array([[u.item()] for r in results['scores'] for u in r]) if return_probability else None)
 
     return final_outputs, scores, None
 
@@ -339,7 +346,6 @@ def eval_accuracies(model_generated, target_truth):
     target_truth = {k: [v.strip()] for k, v in enumerate(target_truth)}
     assert sorted(generated.keys()) == sorted(target_truth.keys())
 
-    eval_metric_start_time = time.time()
     # Compute BLEU scores
     corpus_bleu_r, bleu, ind_bleu, bleu_4 = corpus_bleu(generated, target_truth)
 
@@ -348,11 +354,11 @@ def eval_accuracies(model_generated, target_truth):
     rouge_l, ind_rouge = rouge_calculator.compute_score(target_truth, generated)
 
     # Compute METEOR scores
-    # meteor_calculator = Meteor()
-    # meteor, _ = meteor_calculator.compute_score(target_truth, generated)
+    meteor_calculator = Meteor()
+    meteor, _ = meteor_calculator.compute_score(target_truth, generated)
 
 
-    return bleu * 100, rouge_l * 100, 0 * 100
+    return bleu * 100, rouge_l * 100, meteor * 100
 
 
 # Copyright 2017 Google Inc. All Rights Reserved.

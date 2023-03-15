@@ -33,7 +33,7 @@ data:
         filter_or_truncate: "truncate"
 
 training:
-    model_dir: "test_dir4"
+    model_dir: "test_dir_gnn_no_residual"
     overwrite: True
 
     logging_frequence: 100
@@ -49,7 +49,7 @@ training:
     batch_size: 32
     random_seed: 980820
 
-    # load_model: "test_dir2/best.ckpt"
+    load_model: "test_dir_gnn_no_residual/217905.ckpt"
     reset_best_ckpt: False
     reset_scheduler: False
     reset_optimzer: False
@@ -81,7 +81,7 @@ testing:
     min_output_length: 1
     eval_metrics: ['bleu','rouge-l']
     n_best: 1
-    beam_size: 1
+    beam_size: 4
     beam_alpha: -1
     return_attention: True
     return_probability: True
