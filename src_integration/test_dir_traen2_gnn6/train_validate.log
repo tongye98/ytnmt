@@ -5204,3 +5204,12 @@
 2023-03-15 15:58:46,555 - INFO - __main__ - Epoch 192, Step:  416300, Batch Loss:     0.965844, Lr: 0.000015, Tokens per sec:   3595
 2023-03-15 15:59:01,890 - INFO - __main__ - Epoch 192, Step:  416400, Batch Loss:     0.985015, Lr: 0.000015, Tokens per sec:   3542
 2023-03-15 15:59:17,040 - INFO - __main__ - Epoch 192, Step:  416500, Batch Loss:     0.753023, Lr: 0.000015, Tokens per sec:   3541
+2023-03-15 15:59:32,291 - INFO - __main__ - Epoch 192, Step:  416600, Batch Loss:     1.187715, Lr: 0.000015, Tokens per sec:   3583
+2023-03-15 15:59:47,315 - INFO - __main__ - Epoch 192, Step:  416700, Batch Loss:     0.970410, Lr: 0.000015, Tokens per sec:   3580
+2023-03-15 16:00:02,606 - INFO - __main__ - Epoch 192, Step:  416800, Batch Loss:     1.072040, Lr: 0.000015, Tokens per sec:   3436
+2023-03-15 16:00:17,731 - INFO - __main__ - Epoch 192, Step:  416900, Batch Loss:     0.608813, Lr: 0.000015, Tokens per sec:   3604
+2023-03-15 16:00:32,981 - INFO - __main__ - Epoch 192, Step:  417000, Batch Loss:     1.480488, Lr: 0.000015, Tokens per sec:   3537
+2023-03-15 16:00:48,150 - INFO - __main__ - Epoch 192, Step:  417100, Batch Loss:     1.555647, Lr: 0.000015, Tokens per sec:   3615
+2023-03-15 16:01:03,342 - INFO - __main__ - Epoch 192, Step:  417200, Batch Loss:     0.878254, Lr: 0.000015, Tokens per sec:   3532
+2023-03-15 16:01:18,231 - INFO - __main__ - Epoch 192, Step:  417300, Batch Loss:     0.454284, Lr: 0.000015, Tokens per sec:   3618
+2023-03-15 16:01:33,202 - INFO - __main__ - Epoch 192, Step:  417400, Batch Loss:     1.014533, Lr: 0.000015, Tokens per sec:   3560

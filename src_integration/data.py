@@ -293,7 +293,7 @@ def load_data(data_cfg: dict):
     valid_dataset = OurDataset(valid_data_id, valid_data_truth)
     test_dataset = OurDataset(test_data_id, test_data_truth)
 
-    all_data = {"traind_datasest": train_dataset, "valid_dataset":valid_dataset,
+    all_data = {"train_datasest": train_dataset, "valid_dataset":valid_dataset,
                 "test_dataset": test_dataset, "vocab_info": vocab_info}
     
     with open("all_data_stored", 'wb') as f:
