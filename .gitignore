@@ -7,3 +7,6 @@ datastore/
 builds/
 *.ckpt
 *stored
+hidden_representation
+index
+token_map_path

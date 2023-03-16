@@ -90,10 +90,10 @@ testing:
     # no_repeat_ngram_size: -1    # no implemented
 
 retrieval:
-    hidden_representation_path: "hidden_representation"
-    token_map_path: "token_map_path"
+    hidden_representation_path: "test_dir_gnn_no_residual/hidden_representation"
+    token_map_path: "test_dir_gnn_no_residual/token_map_path"
     use_code_representation: True
-    index_path: "index"
+    index_path: "test_dir_gnn_no_residual/index"
     index_type: "INNER" # INNER OR L2
     type: "static_retriever"
     kernel: "Gaussian"
