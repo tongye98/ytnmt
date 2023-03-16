@@ -7,8 +7,9 @@ import codecs
 from pathlib import Path 
 from train import load_config, make_logger
 from data import load_data, make_data_loader
-from model import build_model
+from model import build_model, build_retrieval
 from validate import search, eval_accuracies
+from retrieval_validate import retrieval_search
 from tqdm import tqdm 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,6 @@ def test(cfg_file: str) -> None:
             model_generated = text_vocab.arrays_to_sentences(arrays=all_test_outputs, cut_at_eos=True, skip_pad=True)
             model_generated = [" ".join(output) for output in model_generated]
             logger.warning("model generated length = {}".format(len(model_generated)))
-            logger.warning("target truth length = {}".format(len(target_truth)))
 
             target_truth = dataset.target_truth
 
@@ -155,7 +155,7 @@ def retrieval_test(cfg_file:str):
     model_dir = Path(cfg["training"].get("model_dir", None))
     assert model_dir is not None
 
-    make_logger(model_dir, mode="test")
+    make_logger(model_dir, mode="retrieval_test")
 
     load_model = cfg["training"].get("load_model", None)
     use_cuda = cfg["training"].get("use_cuda", False) and torch.cuda.is_available()
@@ -169,7 +169,7 @@ def retrieval_test(cfg_file:str):
     # train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
     with codecs.open("all_data_stored", 'rb') as f:
         all_data = pickle.load(f)
-    train_dataset = all_data["traind_datasest"]
+    train_dataset = all_data["train_datasest"]
     valid_dataset = all_data["valid_dataset"]
     test_dataset = all_data["test_dataset"]
     vocab_info = all_data["vocab_info"]
@@ -187,6 +187,9 @@ def retrieval_test(cfg_file:str):
     # restore model and optimizer parameters
     model.load_state_dict(model_checkpoint["model_state"])
 
+    retriever = build_retrieval(retrieval_cfg=cfg["retrieval"])
+    model.retriever = retriever
+
     # model to GPU
     if device.type == "cuda":
         model.to(device)
@@ -194,10 +197,10 @@ def retrieval_test(cfg_file:str):
     # Test 
     dataset_to_test = {"valid": valid_dataset, "test":test_dataset}
     for dataset_name, dataset in dataset_to_test.items():
-        # if dataset_name == "valid":
-        #     continue
+        if dataset_name == "valid":
+            continue
         if dataset is not None: 
-            logger.info("Starting testing on %s dataset...", dataset_name)
+            logger.info("Starting Retrieval testing on %s dataset...", dataset_name)
             test_start_time = time.time()
             test_loader = make_data_loader(dataset=dataset, sampler_seed=seed, shuffle=False,
                             batch_size=batch_size*4, num_workers=num_workers, mode="test")
@@ -211,7 +214,7 @@ def retrieval_test(cfg_file:str):
 
             for batch_data in tqdm(test_loader, desc="Testing"):
                 batch_data.to(device)
-                stacked_output, stacked_probability, stacked_attention = search(batch_data, model, cfg)
+                stacked_output, stacked_probability, stacked_attention = retrieval_search(batch_data, model, cfg)
 
                 all_test_outputs.extend(stacked_output)
                 all_test_probability.extend(stacked_probability if stacked_probability is not None else [])
@@ -221,7 +224,6 @@ def retrieval_test(cfg_file:str):
             model_generated = text_vocab.arrays_to_sentences(arrays=all_test_outputs, cut_at_eos=True, skip_pad=True)
             model_generated = [" ".join(output) for output in model_generated]
             logger.warning("model generated length = {}".format(len(model_generated)))
-            logger.warning("target truth length = {}".format(len(target_truth)))
 
             target_truth = dataset.target_truth
 
@@ -236,10 +238,10 @@ def retrieval_test(cfg_file:str):
             logger.info("Evaluation result({}) {}, Test cost time = {:.2f}[sec]".format(
                 "Beam Search" if beam_size > 1 else "Greedy Search", metrics_string, test_duration_time))
 
-            output_file_path = Path(model_dir) / "{}.test_out_beam4".format(dataset_name)
+            output_file_path = Path(model_dir) / "{}.test_out_beam4_retrieval".format(dataset_name)
             write_model_generated_to_file(output_file_path, model_generated)
 
 if __name__ == "__main__":
     cfg_file = "test.yaml"
-    test(cfg_file)
+    # test(cfg_file)
     retrieval_test(cfg_file)

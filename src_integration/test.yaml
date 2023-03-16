@@ -95,6 +95,11 @@ retrieval:
     use_code_representation: True
     index_path: "index"
     index_type: "INNER" # INNER OR L2
+    type: "static_retriever"
+    kernel: "Gaussian"
+    top_k: 8
+    mixing_weight: 0.5
+    bandwidth: 20
 
 
 model:

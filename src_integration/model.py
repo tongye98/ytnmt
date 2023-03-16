@@ -2,7 +2,7 @@ import math
 import logging 
 import numpy as np
 from pathlib import Path
-from typing import Dict, Tuple 
+from typing import Dict, Tuple, Union
 import torch 
 import torch.nn as nn 
 from torch import Tensor 
@@ -10,6 +10,8 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch_geometric.utils import to_dense_batch
 from torch_geometric.nn import SAGEConv, GCNConv, GATConv
+import faiss
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -793,11 +795,11 @@ class Model(nn.Module):
             embed_trg_input = self.trg_embed(trg_input)
             decoder_trg_input = self.trg_learnable_embed(embed_trg_input)
             decoder_trg_input = self.text_emb_dropout(decoder_trg_input)
-            transformer_decoder_output, _, cross_attention_weight = self.transformer_decoder(transformer_encoder_output, 
+            transformer_decoder_output, penultimate_representation, cross_attention_weight = self.transformer_decoder(transformer_encoder_output, 
                         gnn_encoder_output, decoder_trg_input, src_mask, node_mask, trg_mask)
             
             logits = self.output_layer(transformer_decoder_output)
-            return logits, None, cross_attention_weight
+            return logits, penultimate_representation, cross_attention_weight
         
         elif return_type == "get_penultimate_representation":
             embed_src_code_token = self.src_embed(src_input_code_token)
@@ -857,6 +859,321 @@ def build_model(model_cfg: dict=None, vocab_info:dict=None):
     model.log_parameters_list()
     logger.info("The model is built.")
     return model
+
+class FaissIndex(object):
+    """
+    FaissIndex class. factory_template; index_type
+    For train index (core: self.index)
+    """
+    def __init__(self, factory_template:str="IVF256,PQ32", load_index_path:str=None,
+                 use_gpu:bool=True, index_type:str="L2") -> None:
+        super().__init__()
+        self.factory_template = factory_template
+        self.gpu_num = faiss.get_num_gpus()
+        self.use_gpu = use_gpu and (self.gpu_num > 0)
+        logger.warning("use_gpu: {}".format(self.use_gpu))
+        self.index_type= index_type
+        assert self.index_type in {"L2", "INNER"}
+        self._is_trained= False
+        if load_index_path != None:
+            self.load(index_path=load_index_path)
+        
+    def load(self, index_path:str) -> faiss.Index:
+        self.index = faiss.read_index(index_path)
+        if self.use_gpu:
+            self.index = faiss.index_cpu_to_all_gpus(self.index)
+        self._is_trained = True
+    
+    @property
+    def is_trained(self) -> bool:
+        return self._is_trained
+    
+    def train(self, hidden_representation_path:str) -> None:
+        embeddings = np.load(hidden_representation_path, mmap_mode="r")
+        total_samples, dimension = embeddings.shape
+        logger.info("total samples = {}, dimension = {}".format(total_samples, dimension))
+        del embeddings
+        # centroids, training_samples = self._get_clustering_parameters(total_samples)
+        self.index = self.our_initialize_index(dimension)
+        training_embeddinigs = self._get_training_embeddings(hidden_representation_path, total_samples).astype(np.float32)
+        self.index.train(training_embeddinigs)
+        self._is_trained = True
+
+    def _get_clustering_parameters(self, total_samples: int) -> Tuple[int, int]:
+        if 0 < total_samples <= 10 ** 6:
+            centroids = int(8 * total_samples ** 0.5)
+            training_samples = total_samples
+        elif 10 ** 6 < total_samples <= 10 ** 7:
+            centroids = 65536
+            training_samples = min(total_samples, 64 * centroids)
+        else:
+            centroids = 262144
+            training_samples = min(total_samples, 64 * centroids)
+        return centroids, training_samples
+    
+    def our_initialize_index(self, dimension) -> faiss.Index:
+        if self.index_type == "L2":
+            index = faiss.index_factory(dimension, "Flat", faiss.METRIC_L2)
+        elif self.index_type == "INNER":
+            index = faiss.index_factory(dimension, "Flat", faiss.METRIC_INNER_PRODUCT)
+
+        if self.use_gpu:
+            index = faiss.index_cpu_to_all_gpus(index)
+
+        return index
+
+    def _initialize_index(self, dimension:int, centroids:int) -> faiss.Index:
+        template = re.compile(r"IVF\d*").sub(f"IVF{centroids}", self.factory_template)
+        if self.index_type == "L2":
+            index = faiss.index_factory(dimension, template, faiss.METRIC_L2)
+        elif self.index_type == "INNER":
+            index = faiss.index_factory(dimension, template, faiss.METRIC_INNER_PRODUCT)
+        else:
+            assert False, "Double check index_type!"
+        
+        if self.use_gpu:
+            index = faiss.index_cpu_to_all_gpus(index)
+        
+        return index
+    
+    def _get_training_embeddings(self, embeddings_path:str, training_samples: int) -> np.ndarray:
+        embeddings = np.load(embeddings_path, mmap_mode="r")
+        total_samples = embeddings.shape[0]
+        sample_indices = np.random.choice(total_samples, training_samples, replace=False)
+        sample_indices.sort()
+        training_embeddings = embeddings[sample_indices]
+        if self.index_type == "INNER":
+            faiss.normalize_L2(training_embeddings)
+        return training_embeddings        
+    
+    def add(self, hidden_representation_path: str, batch_size: int = 10000) -> None:
+        assert self.is_trained
+        embeddings = np.load(hidden_representation_path)
+        total_samples = embeddings.shape[0]
+        for i in range(0, total_samples, batch_size):
+            start = i 
+            end = min(total_samples, i+batch_size)
+            batch_embeddings = embeddings[start: end].astype(np.float32)
+            if self.index_type == "INNER":
+                faiss.normalize_L2(batch_embeddings)
+            self.index.add(batch_embeddings)
+        del embeddings
+    
+    def export(self, index_path:str) -> None:
+        assert self.is_trained
+        if self.use_gpu:
+            index = faiss.index_gpu_to_cpu(self.index)
+        else:
+            index = self.index 
+        faiss.write_index(index, index_path)
+    
+    def search(self, embeddings: np.ndarray, top_k:int=8)-> Tuple[np.ndarray, np.ndarray]:
+        assert self.is_trained
+        distances, indices = self.index.search(embeddings, k=top_k)
+        return distances, indices
+
+    def set_prob(self, nprobe):
+        # default nprobe = 1, can try a few more
+        # nprobe: search in how many cluster, defualt:1; the bigger nprobe, the result is more accurate, but speed is lower
+        self.index.nprobe = nprobe
+
+    @property
+    def total(self):
+        return self.index.ntotal
+
+class Database(object):
+    """
+    Initilize with index_path, which is built offline,
+    and token path which mapping retrieval indices to token id.
+    """
+    def __init__(self, index_path:str, token_map_path: str, index_type: str, nprobe:int=16) -> None:
+        super().__init__()
+        self.index = FaissIndex(load_index_path=index_path, use_gpu=True, index_type=index_type)
+        self.index.set_prob(nprobe)
+        self.token_map = self.load_token_mapping(token_map_path)
+    
+    @staticmethod
+    def load_token_mapping(token_map_path: str) -> np.ndarray:
+        """
+        Load token mapping from file.
+        """
+        with open(token_map_path) as f:
+            token_map = [int(token_id) for token_id in f.readlines()]
+        token_map = np.asarray(token_map).astype(np.int32)
+        return token_map
+    
+    def search(self, embeddings:np.ndarray, top_k: int=16) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Search nearest top_k embeddings from the Faiss index.
+        embeddings: np.ndarray (batch_size, d)
+        return token_indices: np.ndarray (batch_size, top_k)
+        return distances: np.ndarray
+        """
+        if self.index.index_type == "INNER":
+            faiss.normalize_L2(embeddings)
+        distances, indices = self.index.search(embeddings, top_k)
+        token_indices = self.token_map[indices]
+        return distances, token_indices
+
+class EnhancedDatabase(Database):
+    def __init__(self, index_path:str, token_map_path:str, embedding_path:str, index_type:str, nprobe:int=16, in_memory:bool=True) -> None:
+        super().__init__(index_path, token_map_path, index_type, nprobe)
+        if in_memory: # load data to memory
+            self.embeddings = np.load(embedding_path)
+        else:         # the data still on disk
+            self.embeddings = np.load(embedding_path, mmap_mode="r")
+
+    def enhanced_search(self, hidden:np.ndarray, top_k:int=8, retrieval_dropout:bool=True) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Search nearest top_k embeddings from Faiss index.
+        hidden: np.ndarray [batch_size*trg_len, model_dim]
+        return distances np.ndarray (batch_size*trg_len, top_k)
+        return token_indices: np.ndarray (batch_size*trg_len, top_k)
+        return searched_hidden: np.ndarray (batch_size*trg_len, top_k, model_dim)
+        """
+        if retrieval_dropout:
+            distances, indices = self.index.search(hidden, top_k + 1)
+            distances = distances[:, 1:]
+            indices = indices[:, 1:]
+        else:
+            distances, indices = self.index.search(hidden, top_k)
+        # distances [batch_size*trg_len, top_k]
+        # indices [batch_size*trg_len, top_k]
+
+        token_indices = self.token_map[indices]         # token_indices [batch_size*trg_len, top_k]
+        searched_hidden = self.embeddings[indices]      # searched_hidden [batch_size*trg_len, top_k, dim]
+        return distances, token_indices, searched_hidden
+
+class Kernel(object):
+    def __init__(self, index_type:str) -> None:
+        self.index_type = index_type
+        super().__init__()
+    
+    def similarity(self, distances:torch.Tensor, bandwidth:Union[float, torch.Tensor]) -> torch.Tensor:
+        raise NotImplementedError
+    
+    def compute_example_based_distribution(self, distances:torch.Tensor, bandwidth:Union[float, torch.Tensor], 
+                                            token_indices:torch.Tensor, vocab_size: int) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        scores = self.similarity(distances, bandwidth)
+        # distances[batch_size*trg_len, top_k]
+        sparse_distribution = torch.softmax(scores, dim=-1)
+        # sparse_distribution [batch_size*trg_len, top_k]        
+        zeros = torch.zeros(size=(sparse_distribution.size(0), vocab_size), device=sparse_distribution.device, dtype=sparse_distribution.dtype)
+        distribution = torch.scatter_add(zeros, -1, token_indices, sparse_distribution)
+        return distribution, sparse_distribution
+
+class GaussianKernel(Kernel):
+    def __init__(self, index_type: str) -> None:
+        super().__init__(index_type)
+    
+    def similarity(self, distances: torch.Tensor, bandwidth: Union[float, torch.Tensor]) -> torch.Tensor:
+        if self.index_type == "INNER":
+            return distances * bandwidth
+        elif self.index_type == "L2":
+            return - distances / bandwidth
+        else:
+            assert False
+
+class Retriever(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def forward(self, hidden: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
+        """
+        hidden: [batch_size, trg_len, model_dim]
+        logits: [batch_size, trg_len, vocab_size]
+        return:
+            log_probs: [batch_size, seq_len, vocab_size]
+        """
+        raise NotImplementedError("The forward method is not implemented in the Retrieval class.")
+    
+    def detailed_forward(self, hidden:torch.Tensor, logits:torch.Tensor) -> Tuple[torch.Tensor,
+        torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        hidden: [batch_size, trg_len, model_dim]
+        logits: [batch_size, trg_len, vocab_size]
+        """
+        raise NotImplementedError
+
+class NoRetriever(Retriever):
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def forward(self, hidden: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
+        log_probs = F.log_softmax(logits, dim=-1)
+        return log_probs
+
+class StaticRetriever(Retriever):
+    def __init__(self, database:Database, top_k:int, mixing_weight:float, kernel:Kernel, bandwidth:float) -> None:
+        super().__init__()
+        self.database = database
+        self.top_k = top_k 
+        self.mixing_weight = mixing_weight
+        self.kernel = kernel
+        self.bandwidth = bandwidth
+    
+    def forward(self, hidden:torch.Tensor, logits:torch.Tensor) -> torch.Tensor:
+        """
+        hidden [batch_size, trg_len, model_dim]
+        logits [batch_size, trg_len, trg_vocab_size]
+        """
+        batch_size, trg_len, model_dim = hidden.size()
+        vocab_size = logits.size(-1)
+        hidden = hidden.view(batch_size*trg_len, model_dim)
+        logits = logits.view(batch_size*trg_len, vocab_size)
+
+        model_based_distribution = F.softmax(logits, dim=-1)
+        # model_based_distribution [batch_size*trg_len, trg_vocab_size]
+
+        distances, token_indices = self.database.search(hidden.cpu().numpy(), top_k=self.top_k)
+        # logger.warning("token_indices = {}".format(token_indices))
+        # logger.warning("distances = {}".format(distances))
+        # distances [batch_size*trg_len, top_k] distance
+        # token_indices [batch_size*trg_len, top_k] id
+        distances = torch.FloatTensor(distances).to(hidden.device)
+        token_indices = torch.LongTensor(token_indices).to(hidden.device)
+        # distances = distances[:, 2:]
+        # token_indices = token_indices[:, 2:]
+        example_based_distribution, _ = self.kernel.compute_example_based_distribution(distances, self.bandwidth, token_indices, vocab_size)
+        # example_based_distribution [batch_size*trg_len, trg_vocab_size]
+
+        mixed_distribution = (1 - self.mixing_weight) * model_based_distribution + self.mixing_weight * example_based_distribution
+
+        log_probs = torch.log(mixed_distribution)
+        log_probs = log_probs.view(batch_size, trg_len, vocab_size).contiguous()
+        # log_probs [batch_size, trg_len, vocab_size]
+
+        analysis = dict()
+        analysis["token_indices"] = token_indices
+        analysis["model_based_distribution"] = model_based_distribution
+        analysis["example_based_distribution"] = example_based_distribution 
+        analysis["mixed_distribution"] = mixed_distribution
+        analysis["distances"] = distances
+        
+        return log_probs, analysis
+
+def build_retrieval(retrieval_cfg:dict):
+    retrieval_type = retrieval_cfg["type"]
+    if retrieval_type == "static_retriever":
+        database = Database(index_path=retrieval_cfg["index_path"],
+                            token_map_path=retrieval_cfg["token_map_path"],
+                            index_type=retrieval_cfg["index_type"])
+        
+        assert retrieval_cfg["kernel"] != "Gaussain"
+        kernel = GaussianKernel(index_type=retrieval_cfg["index_type"])
+
+        retriever = StaticRetriever(database=database,
+                    top_k=retrieval_cfg["top_k"],
+                    mixing_weight=retrieval_cfg["mixing_weight"],
+                    bandwidth=retrieval_cfg["bandwidth"],
+                    kernel=kernel)
+    else:
+        logger.warning("no such retriever {}".format(retrieval_type))
+
+    return retriever
+
+
 
 if __name__ == "__main__":
     logger = logging.getLogger("")
