@@ -821,6 +821,39 @@ class Model(nn.Module):
             
             return penultimate_representation
         
+        elif return_type == "retrieval_adaptor":
+
+            embed_src_code_token = self.src_embed(src_input_code_token)
+            transformer_encoder_input = self.code_learnable_embed(embed_src_code_token)
+            transformer_encoder_input = self.code_emb_dropout(transformer_encoder_input)
+
+            embed_src_ast_token = self.src_embed(src_input_ast_token)
+            gnn_encoder_input = self.position_embed(src_input_ast_position) + embed_src_ast_token
+            gnn_encoder_input = self.ast_node_emb_dropout(gnn_encoder_input)
+
+            transformer_encoder_output = self.transformer_encoder(transformer_encoder_input, src_mask)
+            gnn_encoder_output, node_mask = self.gnn_encoder(gnn_encoder_input, edge_index, node_batch)
+
+            embed_trg_input = self.trg_embed(trg_input)
+            decoder_trg_input = self.trg_learnable_embed(embed_trg_input)
+            decoder_trg_input = self.text_emb_dropout(decoder_trg_input)
+            transformer_decoder_output, _, _ = self.transformer_decoder(transformer_encoder_output, 
+                                        gnn_encoder_output, decoder_trg_input, src_mask, node_mask, trg_mask)
+            
+
+            transformer_context, gnn_context = self.adaptor(
+                transformer_encoder_output, src_mask, gnn_encoder_output, node_mask, transformer_decoder_output)
+
+            final_output = (transformer_context + gnn_context + transformer_decoder_output) / 3
+
+            logits = self.output_layer(final_output) 
+
+            log_probs = F.log_softmax(logits, dim=-1)
+
+            batch_loss = self.loss_function(log_probs, target=trg_truth)
+            # NOTE batch loss = sum over all sentence of all tokens in the batch that are not pad!
+            return batch_loss
+
         else:
             return None 
             
@@ -1173,6 +1206,50 @@ def build_retrieval(retrieval_cfg:dict):
 
     return retriever
 
+class Adaptor(nn.Module):
+    def __init__(self, model_dim) -> None:
+        super().__init__()
+        self.model_dim = model_dim 
+
+        self.transformer_encoder_adaptor = nn.Linear(model_dim, model_dim)
+        self.gnn_encoder_adaptor = nn.Linear(model_dim, model_dim)
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, transformer_encoder_output, src_mask, gnn_encoder_output, node_mask, decoder_representation):
+        # self.unittest( transformer_encoder_output, src_mask, gnn_encoder_output, node_mask, decoder_representation)
+        query = decoder_representation
+        # [batch, trg_len, model_dim]
+        query = query / math.sqrt(self.model_dim)
+
+        transformer_encoder_adaptor = self.transformer_encoder_adaptor(transformer_encoder_output)
+        transformer_scores = torch.matmul(query, transformer_encoder_adaptor.transpose(1,2))
+        if src_mask is not None:
+            transformer_scores = transformer_scores.masked_fill(~src_mask, float("-inf"))
+        transformer_weights = self.softmax(transformer_scores)
+        transformer_context = torch.matmul(transformer_weights, transformer_encoder_adaptor)
+        # (batch, trg_len, dim)
+    
+        gnn_encoder_adaptor = self.gnn_encoder_adaptor(gnn_encoder_output)
+        gnn_scores = torch.matmul(query, gnn_encoder_adaptor.transpose(1,2))
+        if node_mask is not None:
+            gnn_scores = gnn_scores.masked_fill(~node_mask.unsqueeze(1), float("-inf"))
+        gnn_weights = self.softmax(gnn_scores)
+        gnn_context = torch.matmul(gnn_weights, gnn_encoder_adaptor)
+        # (batch, trg_len, dim)
+
+        return transformer_context, gnn_context
+
+    def unittest(self, transformer_encoder_output, src_mask, gnn_encoder_output, node_mask, decoder_representation):
+        logger.warning("transformer_encoder_output shape = {}".format(transformer_encoder_output.shape))
+        logger.warning("src_mask shape = {}".format(src_mask.shape))
+        logger.warning("gnn_encoder_output shape = {}".format(gnn_encoder_output.shape))
+        logger.warning("node_mask shape = {}".format(node_mask.shape))
+        logger.warning("decoder_representation shape = {}".format(decoder_representation.shape))
+
+
+
+def build_adaptor(model_dim):
+    return Adaptor(model_dim)
 
 
 if __name__ == "__main__":

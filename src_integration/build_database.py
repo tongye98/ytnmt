@@ -145,7 +145,7 @@ def build_database(cfg_file: str):
 
     # load data
     logger.info("Load data")
-    with codecs.open("all_data_stored", 'rb') as f:
+    with codecs.open("../models/codescribe_java/no_gnn_residual/all_data_stored", 'rb') as f:
         all_data = pickle.load(f)
     train_dataset = all_data["train_datasest"]
     valid_dataset = all_data["valid_dataset"]
@@ -197,5 +197,5 @@ def build_database(cfg_file: str):
     del index
 
 if __name__ == "__main__":
-    cfg = "test.yaml"
+    cfg = "../models/codescribe_java/no_gnn_residual/no_residual.yaml"
     build_database(cfg)

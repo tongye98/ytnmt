@@ -62,7 +62,7 @@ def test(cfg_file: str) -> None:
     model_dir = Path(cfg["training"].get("model_dir", None))
     assert model_dir is not None
 
-    make_logger(model_dir, mode="test")
+    make_logger(model_dir, mode="beam4_test")
 
     load_model = cfg["training"].get("load_model", None)
     use_cuda = cfg["training"].get("use_cuda", False) and torch.cuda.is_available()
@@ -74,9 +74,9 @@ def test(cfg_file: str) -> None:
 
     # load data
     # train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
-    with codecs.open("all_data_stored", 'rb') as f:
+    with codecs.open("../models/codescribe_java/no_gnn_residual/all_data_stored", 'rb') as f:
         all_data = pickle.load(f)
-    train_dataset = all_data["traind_datasest"]
+    train_dataset = all_data["train_datasest"]
     valid_dataset = all_data["valid_dataset"]
     test_dataset = all_data["test_dataset"]
     vocab_info = all_data["vocab_info"]
@@ -101,8 +101,8 @@ def test(cfg_file: str) -> None:
     # Test 
     dataset_to_test = {"valid": valid_dataset, "test":test_dataset}
     for dataset_name, dataset in dataset_to_test.items():
-        # if dataset_name == "valid":
-        #     continue
+        if dataset_name == "valid":
+            continue
         if dataset is not None: 
             logger.info("Starting testing on %s dataset...", dataset_name)
             test_start_time = time.time()
@@ -155,7 +155,7 @@ def retrieval_test(cfg_file:str):
     model_dir = Path(cfg["training"].get("model_dir", None))
     assert model_dir is not None
 
-    make_logger(model_dir, mode="retrieval_test")
+    make_logger(model_dir, mode="retrieval_test_beam4")
 
     load_model = cfg["training"].get("load_model", None)
     use_cuda = cfg["training"].get("use_cuda", False) and torch.cuda.is_available()
@@ -167,7 +167,7 @@ def retrieval_test(cfg_file:str):
 
     # load data
     # train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
-    with codecs.open("all_data_stored", 'rb') as f:
+    with codecs.open("../models/codescribe_java/no_gnn_residual/all_data_stored", 'rb') as f:
         all_data = pickle.load(f)
     train_dataset = all_data["train_datasest"]
     valid_dataset = all_data["valid_dataset"]
@@ -242,6 +242,6 @@ def retrieval_test(cfg_file:str):
             write_model_generated_to_file(output_file_path, model_generated)
 
 if __name__ == "__main__":
-    cfg_file = "test.yaml"
+    cfg_file = "../models/codescribe_java/no_gnn_residual/no_residual.yaml"
     # test(cfg_file)
     retrieval_test(cfg_file)
