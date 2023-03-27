@@ -1,8 +1,9 @@
 # relative
 data:
-    train_data_path: "../datas/codescribe_java/train_data.json"
-    valid_data_path: "../datas/codescribe_java/valid_data.json"
-    test_data_path: "../datas/codescribe_java/test_data.json"
+    already_stored: "models/codescribe_java/test_dir_traen2_gnn6/all_data_stored"
+    train_data_path: "datas/codescribe_java/train_data.json"
+    valid_data_path: "datas/codescribe_java/valid_data.json"
+    test_data_path: "datas/codescribe_java/test_data.json"
     dataset_type: "plain"
     code:
         language: "code"
@@ -33,11 +34,11 @@ data:
         filter_or_truncate: "truncate"
 
 training:
-    model_dir: "test_dir_traen2_gnn6"
+    model_dir: "models/codescribe_java/test_dir_traen2_gnn6"
     overwrite: False
 
     logging_frequence: 100
-    validation_frequence: 100 # after how many epochs
+    validation_frequence: 1 # after how many epochs
     log_valid_samples: [0,1,2]
 
     use_cuda: True
@@ -49,11 +50,12 @@ training:
     batch_size: 32
     random_seed: 980820
 
-    load_model: "test_dir_traen2_gnn6/435800.ckpt"
+    load_model: "models/codescribe_java/test_dir_traen2_gnn6/435800.ckpt"
+    # load_model: False
     reset_best_ckpt: False
     reset_scheduler: False
     reset_optimzer: False
-    reset_iter_state: False
+    reset_iteration_state: False
 
     learning_rate: 0.001
     learning_rate_min: 1.0e-8
@@ -69,7 +71,7 @@ training:
     factor: 0.5
     patience: 5
     step_size: 1
-    gamma: 0.99
+    gamma: 0.1
 
     num_ckpts_keep: 3
 
@@ -100,7 +102,6 @@ retrieval:
     top_k: 8
     mixing_weight: 0.5
     bandwidth: 20
-
 
 model:
     initializer: "xavier_uniform"     # xavier_uniform xavier_normal uniform normal

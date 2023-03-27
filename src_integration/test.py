@@ -155,7 +155,7 @@ def retrieval_test(cfg_file:str):
     model_dir = Path(cfg["training"].get("model_dir", None))
     assert model_dir is not None
 
-    make_logger(model_dir, mode="retrieval_test_beam4")
+    make_logger(model_dir, mode="retrieval_test_beam4_2gram")
 
     load_model = cfg["training"].get("load_model", None)
     use_cuda = cfg["training"].get("use_cuda", False) and torch.cuda.is_available()
@@ -189,6 +189,9 @@ def retrieval_test(cfg_file:str):
 
     retriever = build_retrieval(retrieval_cfg=cfg["retrieval"])
     model.retriever = retriever
+
+    retriever_token = build_retrieval(retrieval_cfg=cfg["retrieval_token"])
+    model.retriever_token = retriever_token
 
     # model to GPU
     if device.type == "cuda":
@@ -238,7 +241,7 @@ def retrieval_test(cfg_file:str):
             logger.info("Evaluation result({}) {}, Test cost time = {:.2f}[sec]".format(
                 "Beam Search" if beam_size > 1 else "Greedy Search", metrics_string, test_duration_time))
 
-            output_file_path = Path(model_dir) / "{}.test_out_beam4_retrieval".format(dataset_name)
+            output_file_path = Path(model_dir) / "{}.test_out_beam4_retrieval_2gram".format(dataset_name)
             write_model_generated_to_file(output_file_path, model_generated)
 
 if __name__ == "__main__":

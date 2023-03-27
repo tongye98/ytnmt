@@ -10,6 +10,8 @@ import numpy as np
 import heapq
 import math 
 import shutil
+import codecs
+import pickle
 import time 
 from functools import partial 
 from model import build_model, Model
@@ -102,14 +104,6 @@ class TrainManager(object):
         self.model = model
         if self.device.type == "cuda":
             self.model.to(self.device)
-        
-        self.load_model = train_cfg.get("load_model", False)
-        if self.load_model is True:
-            self.init_from_checkpoint(self.load_model,
-                reset_best_ckpt=train_cfg.get("reset_best_ckpt", False),
-                reset_scheduler=train_cfg.get("reset_scheduler", False),
-                reset_optimizer=train_cfg.get("reset_optimizer", False),
-                reset_iter_state=train_cfg.get("reset_iter_state", False))
 
         # learning rate and optimization & schedular
         self.learning_rate_min = train_cfg.get("learning_rate_min", 1.0e-8)
@@ -135,6 +129,14 @@ class TrainManager(object):
             best_ckpt_score=np.inf if self.minimize_metric else -np.inf,
         )
         self.train_loader = None
+
+        self.load_model = train_cfg.get("load_model", False)
+        if self.load_model:
+            self.init_from_checkpoint(Path(self.load_model),
+                reset_best_ckpt=train_cfg.get("reset_best_ckpt", False),
+                reset_scheduler=train_cfg.get("reset_scheduler", False),
+                reset_optimizer=train_cfg.get("reset_optimizer", False),
+                reset_iteration_state=train_cfg.get("reset_iteration_state", False))
 
     def build_gradient_clipper(self, train_cfg:dict):
         """
@@ -192,7 +194,7 @@ class TrainManager(object):
                         patience=patience, threshold=0.0001, threshold_mode='abs', eps=1e-8)
             scheduler_step_at = "validation"
         elif scheduler_name == "StepLR":
-            step_size = train_cfg.get("step_size", 5)
+            step_size = train_cfg.get("step_size", 1)
             gamma = train_cfg.get("gamma", 0.1)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
             scheduler_step_at = "epoch"  
@@ -219,6 +221,7 @@ class TrainManager(object):
                     "\tn_gpu: %d\n"
                     "\tbatch_size: %d",
                     self.device.type, self.n_gpu, self.batch_size)
+
         try:
             for epoch_no in range(self.epochs):
                 logger.info("Epoch %d", epoch_no + 1)
@@ -287,7 +290,7 @@ class TrainManager(object):
 
                 if self.scheduler_step_at == "epoch":
                     self.scheduler.step()
-
+                    
                 # validate on the entire dev dataset
                 if (epoch_no + 1) % self.valid_frequence == 0:
                     valid_duration_time = self.validate(valid_dataset, vocab_info)
@@ -383,7 +386,8 @@ class TrainManager(object):
         all_validate_attention = []
         all_validate_loss = 0
         validate_score = {"loss":float("nan"), "ppl":float("nan")}
-
+        
+        logger.info("Beam Size = {}".format(int(self.cfg["test"]["beam_size"])))
         for batch_data in tqdm(self.valid_loader, desc="Validating"):
             batch_data.to(self.device)
             with torch.no_grad():
@@ -587,17 +591,15 @@ class TrainManager(object):
 
     def init_from_checkpoint(self, path:Path, 
                              reset_best_ckpt:bool=False, reset_scheduler:bool=False,
-                             reset_optimizer:bool=False, reset_iter_state:bool=False):
+                             reset_optimizer:bool=False, reset_iteration_state:bool=False):
         """
         Initialize the training from a given checkpoint file.
         The checkpoint file contain not only model parameters, but also 
         scheduler and optimizer states.
         """
-        logger.info("Loading model from %s", path)
         assert path.is_file(), f"model checkpoint {path} not found!"
         model_checkpoint = torch.load(path, map_location=self.device)
         logger.info("Load model from %s done!", path)
-
         # restore model parameters
         self.model.load_state_dict(model_checkpoint["model_state"])
 
@@ -608,7 +610,7 @@ class TrainManager(object):
         
         if not reset_scheduler:
             if model_checkpoint["scheduler_state"] is not None and self.scheduler is not None:
-                self.scheduler.load_state_dict(model_checkpoint["schedular_state"])
+                self.scheduler.load_state_dict(model_checkpoint["scheduler_state"])
         else:
             logger.warning("Reset Scheduler.")
 
@@ -618,8 +620,7 @@ class TrainManager(object):
         else:
             logger.warning("Reset tracking of the best checkpoints.")
         
-        if not reset_iter_state:
-            assert "train_iter_state" in model_checkpoint
+        if not reset_iteration_state:
             self.train_stats.steps = model_checkpoint["steps"]
             self.train_stats.total_tokens = model_checkpoint["total_tokens"]
         else:
@@ -645,14 +646,26 @@ def train(cfg_file: str) -> None:
 
     model_dir = Path(cfg["training"]["model_dir"])
     overwrite = cfg["training"].get("overwrite", False)
-    model_dir = make_model_dir(model_dir, overwrite) # model_dir: absolute path
-
-    make_logger(model_dir, mode="train_validate")
+    load_model = cfg["training"].get("load_model", False)
+    if load_model is False:
+        model_dir = make_model_dir(model_dir, overwrite) # model_dir: absolute path
+        make_logger(model_dir, mode="train_validate")
+    else:
+        make_logger(model_dir, mode="continue_train")
 
     set_seed(seed=int(cfg["training"].get("random_seed", 820)))
 
     # load data
-    train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
+    already_stored = cfg["data"].get("already_stored", False)
+    if already_stored:
+        with codecs.open(already_stored, 'rb') as f:
+            all_data = pickle.load(f)
+        train_dataset = all_data["train_datasest"]
+        valid_dataset = all_data["valid_dataset"]
+        test_dataset = all_data["test_dataset"]
+        vocab_info = all_data["vocab_info"]
+    else:
+        train_dataset, valid_dataset, test_dataset, vocab_info = load_data(data_cfg=cfg["data"])
     
     # build model
     model = build_model(model_cfg=cfg["model"], vocab_info=vocab_info)
@@ -664,5 +677,5 @@ def train(cfg_file: str) -> None:
     trainer.train_and_validate(train_dataset=train_dataset, valid_dataset=valid_dataset, vocab_info=vocab_info)
 
 if __name__ == "__main__":
-    cfg_file = "test.yaml"
+    cfg_file = "configs/codescribe_java/test.yaml"
     train(cfg_file)

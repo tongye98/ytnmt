@@ -1019,20 +1019,29 @@ class Database(object):
     Initilize with index_path, which is built offline,
     and token path which mapping retrieval indices to token id.
     """
-    def __init__(self, index_path:str, token_map_path: str, index_type: str, nprobe:int=16) -> None:
+    def __init__(self, index_path:str, token_map_path: str, index_type: str, nprobe:int=16, n_gram:int=1) -> None:
         super().__init__()
         self.index = FaissIndex(load_index_path=index_path, use_gpu=True, index_type=index_type)
         self.index.set_prob(nprobe)
+        self.n_gram = n_gram
         self.token_map = self.load_token_mapping(token_map_path)
     
-    @staticmethod
-    def load_token_mapping(token_map_path: str) -> np.ndarray:
+    # staticmethod
+    def load_token_mapping(self, token_map_path: str) -> np.ndarray:
         """
         Load token mapping from file.
         """
-        with open(token_map_path) as f:
-            token_map = [int(token_id) for token_id in f.readlines()]
-        token_map = np.asarray(token_map).astype(np.int32)
+        if self.n_gram == 1:
+            with open(token_map_path) as f:
+                token_map = [int(token_id) for token_id in f.readlines()]
+            token_map = np.asarray(token_map).astype(np.int32)
+        elif self.n_gram == 2:
+            with open(token_map_path) as f:
+                token_map = []
+                for token_id in f.read().splitlines():
+                    token_map.append([int(str_id) for str_id in token_id.split(',')])
+                token_map = np.asarray(token_map).astype(np.int32)
+
         return token_map
     
     def search(self, embeddings:np.ndarray, top_k: int=16) -> Tuple[np.ndarray, np.ndarray]:
@@ -1045,6 +1054,7 @@ class Database(object):
         if self.index.index_type == "INNER":
             faiss.normalize_L2(embeddings)
         distances, indices = self.index.search(embeddings, top_k)
+        # logger.warning("indices = {}".format(indices))
         token_indices = self.token_map[indices]
         return distances, token_indices
 
@@ -1078,8 +1088,9 @@ class EnhancedDatabase(Database):
         return distances, token_indices, searched_hidden
 
 class Kernel(object):
-    def __init__(self, index_type:str) -> None:
+    def __init__(self, index_type:str, n_gram:int) -> None:
         self.index_type = index_type
+        self.n_gram = n_gram
         super().__init__()
     
     def similarity(self, distances:torch.Tensor, bandwidth:Union[float, torch.Tensor]) -> torch.Tensor:
@@ -1087,18 +1098,31 @@ class Kernel(object):
     
     def compute_example_based_distribution(self, distances:torch.Tensor, bandwidth:Union[float, torch.Tensor], 
                                             token_indices:torch.Tensor, vocab_size: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        if self.n_gram == 1:
+            scores = self.similarity(distances, bandwidth)
+            # distances[batch_size*trg_len, top_k]
+            sparse_distribution = torch.softmax(scores, dim=-1)
+            # sparse_distribution [batch_size*trg_len, top_k]        
+            zeros = torch.zeros(size=(sparse_distribution.size(0), vocab_size), device=sparse_distribution.device, dtype=sparse_distribution.dtype) 
+            distribution = torch.scatter_add(zeros, -1, token_indices, sparse_distribution)
+        elif self.n_gram == 2:
+            scores = self.similarity(distances, bandwidth)
+            sparse_distribution = torch.softmax(scores, dim=-1)
+            zeros = torch.zeros(size=(sparse_distribution.size(0), vocab_size), device=sparse_distribution.device, dtype=sparse_distribution.dtype)
+            token_indices_token1 = token_indices[:,:,0]
+            token_indices_token2 = token_indices[:,:,1]
+            # distribution = torch.scatter_add(zeros, -1, token_indices_token1, sparse_distribution)
+            distribution = torch.scatter_add(zeros, -1, token_indices_token2, sparse_distribution)
+            # distribution = (distribution1 + distribution2) / 2
+            # logger.warning(torch.sum(distribution, dim=-1))
+        else:
+            assert False
 
-        scores = self.similarity(distances, bandwidth)
-        # distances[batch_size*trg_len, top_k]
-        sparse_distribution = torch.softmax(scores, dim=-1)
-        # sparse_distribution [batch_size*trg_len, top_k]        
-        zeros = torch.zeros(size=(sparse_distribution.size(0), vocab_size), device=sparse_distribution.device, dtype=sparse_distribution.dtype)
-        distribution = torch.scatter_add(zeros, -1, token_indices, sparse_distribution)
         return distribution, sparse_distribution
 
 class GaussianKernel(Kernel):
-    def __init__(self, index_type: str) -> None:
-        super().__init__(index_type)
+    def __init__(self, index_type: str, n_gram:int) -> None:
+        super().__init__(index_type, n_gram)
     
     def similarity(self, distances: torch.Tensor, bandwidth: Union[float, torch.Tensor]) -> torch.Tensor:
         if self.index_type == "INNER":
@@ -1168,6 +1192,10 @@ class StaticRetriever(Retriever):
         token_indices = torch.LongTensor(token_indices).to(hidden.device)
         # distances = distances[:, 2:]
         # token_indices = token_indices[:, 2:]
+        # logger.warning("distance = {}".format(distances))
+        # logger.warning("distance shape = {}".format(distances.size()))
+        # logger.warning("token_indices = {}".format(token_indices))
+        # logger.warning("token indices shape = {}".format(token_indices.size()))
         example_based_distribution, _ = self.kernel.compute_example_based_distribution(distances, self.bandwidth, token_indices, vocab_size)
         # example_based_distribution [batch_size*trg_len, trg_vocab_size]
 
@@ -1184,17 +1212,18 @@ class StaticRetriever(Retriever):
         analysis["mixed_distribution"] = mixed_distribution
         analysis["distances"] = distances
         
-        return log_probs, analysis
+        return log_probs, analysis, example_based_distribution
 
 def build_retrieval(retrieval_cfg:dict):
     retrieval_type = retrieval_cfg["type"]
     if retrieval_type == "static_retriever":
         database = Database(index_path=retrieval_cfg["index_path"],
                             token_map_path=retrieval_cfg["token_map_path"],
-                            index_type=retrieval_cfg["index_type"])
+                            index_type=retrieval_cfg["index_type"],
+                            n_gram = retrieval_cfg["n_gram"])
         
         assert retrieval_cfg["kernel"] != "Gaussain"
-        kernel = GaussianKernel(index_type=retrieval_cfg["index_type"])
+        kernel = GaussianKernel(index_type=retrieval_cfg["index_type"], n_gram=retrieval_cfg["n_gram"])
 
         retriever = StaticRetriever(database=database,
                     top_k=retrieval_cfg["top_k"],

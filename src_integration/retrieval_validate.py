@@ -96,16 +96,38 @@ def retrieval_greedy_search(model, transformer_encoder_output, src_mask, gnn_enc
                 transformer_encoder_output=transformer_encoder_output,
                 gnn_encoder_output=gnn_encoder_output)
             # logits [batch_size, step+1, trg_vocab_size]
+            # logger.warning("logits shape = {}".format(logits.size())) [256,1, 13207]
+            # logger.warning("penultation representation shape = {}".format(penultimate_representation.size())) [256,1,512]
+            # assert False
+            if step == 0:
+                output = logits[:, -1] 
+                # output [batch_size, trg_vocab_size]
+                output = output.unsqueeze(1) # [batch_size, 1, trg_vocab_size]
+                penultimate_representation = penultimate_representation[:, -1].unsqueeze(1)
+                # [batch_size, 1, model_dim]
 
-            output = logits[:, -1] 
-            # output [batch_size, trg_vocab_size]
-            output = output.unsqueeze(1) # [batch_size, 1, trg_vocab_size]
-            penultimate_representation = penultimate_representation[:, -1].unsqueeze(1)
-            # [batch_size, 1, model_dim]
+                log_probs, analysis, example_based_distribution = model.retriever_token(penultimate_representation, output)
+                # log_probs [batch_size, 1, vocab_size]
+                log_probs = log_probs.squeeze(1)
+                # distribution = F.softmax(output, dim=-1)
+                # log_probs = torch.log(distribution).squeeze(1)
+                # logger.warning("log_probs step 0 = {}".format(log_probs.size()))
+            else:
+                output = logits[:, -1] #[batch_size, trg_vocab_size]
+                output = output.unsqueeze(1) # [batch_size, 1, trg_vocab_size]
+                current_penultimate_representation = penultimate_representation[:, -1]
+                prevent_penultimate_representation = penultimate_representation[:, -2]
+                mean_penultimate_representation = (current_penultimate_representation + prevent_penultimate_representation) / 2
+                mean_penultimate_representation = mean_penultimate_representation.unsqueeze(1) # [batch_size, 1, model_dim]
+                log_probs, analysis, example_based_distribution = model.retriever(mean_penultimate_representation, output)
 
-            log_probs, analysis = model.retriever(penultimate_representation, output)
-            # log_probs [batch_size, 1, vocab_size]
-            log_probs = log_probs.squeeze(1)
+                log_probs_token, analysis_token, example_based_distribution_token = model.retriever_token(current_penultimate_representation.unsqueeze(1), output)
+
+                mixed_distribution = 0.5 * F.softmax(output.squeeze(1), dim=-1) + 0.25 * example_based_distribution + 0.25 * example_based_distribution_token
+                log_probs = torch.log(mixed_distribution)
+
+                # log_probs = log_probs.squeeze(1)
+                # logger.warning("log_probs shape = {}".format(log_probs.size()))
 
             if not generate_unk:
                 log_probs[:, unk_index] = float("-inf")
@@ -221,12 +243,31 @@ def retrieval_beam_search(model, transformer_encoder_output, src_mask, gnn_encod
                                 gnn_encoder_output=gnn_encoder_output)
 
             # for the transformer we made predictions for all time steps up to this point, so we only want to know about the last time step.
-            output = logits[:, -1] # output [batch_size*beam_size, vocab_size]
-            output = output.unsqueeze(1) # [batch_size*beam_size, 1, vocab_size]
-            penultimate_representation = penultimate_representation[:, -1].unsqueeze(1) #[batch_size*beam_size, 1, model_dim]
+            if step == 0:
+                output = logits[:, -1] # output [batch_size*beam_size, vocab_size]
+                output = output.unsqueeze(1) # [batch_size*beam_size, 1, vocab_size]
+                penultimate_representation = penultimate_representation[:, -1].unsqueeze(1) #[batch_size*beam_size, 1, model_dim]
 
-        log_probs, _ = model.retriever(penultimate_representation, output)
-        log_probs = log_probs.squeeze(1)
+                log_probs, analysis, example_based_distribution = model.retriever_token(penultimate_representation, output)
+                log_probs = log_probs.squeeze(1)
+                # distribution = F.softmax(output, dim=-1)
+                # log_probs = torch.log(distribution).squeeze(1)
+            else:
+                output = logits[:,-1]
+                output = output.unsqueeze(1)
+                current_penultimate_representation = penultimate_representation[:, -1]
+                prevent_penultimate_representation = penultimate_representation[:, -2]
+                mean_penultimate_representation = (current_penultimate_representation + prevent_penultimate_representation) / 2
+                mean_penultimate_representation = mean_penultimate_representation.unsqueeze(1)
+                log_probs, analysis, example_based_distribution= model.retriever(mean_penultimate_representation, output)
+
+                log_probs_token, analysis_token, example_based_distribution_token = model.retriever_token(current_penultimate_representation.unsqueeze(1), output)
+                mixed_distribution = 0.5 * F.softmax(output.squeeze(1), dim=-1) + 0.25 * example_based_distribution + 0.25 * example_based_distribution_token
+                # log_probs = log_probs.squeeze(1)
+                log_probs = torch.log(mixed_distribution)
+
+        # log_probs, _ = model.retriever(penultimate_representation, output)
+        # log_probs = log_probs.squeeze(1)
 
         if not generate_unk:
             log_probs[:, unk_index] = float("-inf")

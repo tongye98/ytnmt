@@ -104,16 +104,38 @@ def store_examples(model, hidden_representation_path:str, token_map_path:str,
             # [batch_size, trg_len, model_dim]
 
         nseqs = code_tokens.shape[0]
+        n_gram = 2
         for i in range(nseqs):   
             # for each sentence
-            sentence_representation = penultimate_representation[i] #[trg_len, model_dim]
-            text_tokens = text_tokens_output[i] #[trg_len]
-            for text_token_id, token_representation in zip(text_tokens, sentence_representation):
-                total_original_tokens += 1
-                if text_token_id != PAD_ID:
-                    npaa.append(token_representation[np.newaxis, :])
-                    token_map_file.write(f"{text_token_id}\n")
-                    total_tokens += 1
+            if n_gram == 1:
+                sentence_representation = penultimate_representation[i] #[trg_len, model_dim]
+                text_tokens = text_tokens_output[i] #[trg_len]
+                for text_token_id, token_representation in zip(text_tokens, sentence_representation):
+                    total_original_tokens += 1
+                    if text_token_id != PAD_ID:
+                        npaa.append(token_representation[np.newaxis, :])
+                        token_map_file.write(f"{text_token_id}\n")
+                        total_tokens += 1
+            elif n_gram == 2:
+                # logger.warning("n_gram = 2")
+                sentence_representation = penultimate_representation[i] # [trg_len, model_dim]
+                text_tokens = text_tokens_output[i] # [trg_len]
+                trg_len = sentence_representation.shape[0]
+
+                for i in range(1, trg_len):
+                    total_original_tokens += 1
+                    current_token_representation = sentence_representation[i] # [model_dim]
+                    prevent_token_representation = sentence_representation[i-1] # [model_dim]
+                    mean_token_representation = (current_token_representation + prevent_token_representation) / 2
+                    
+                    current_text_token_id = text_tokens[i]
+                    prevent_text_token_id = text_tokens[i-1]
+                    if current_text_token_id != PAD_ID or prevent_text_token_id != PAD_ID:
+                        npaa.append(mean_token_representation[np.newaxis, :])
+                        token_map_file.write("{},{}\n".format(prevent_text_token_id, current_text_token_id))
+                        total_tokens += 1
+            else:
+                assert False
 
         total_sequence += batch_size
             
